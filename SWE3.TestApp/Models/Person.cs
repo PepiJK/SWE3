@@ -5,14 +5,14 @@ namespace SWE3.TestApp.Models
 {
     public class Person
     {
-        [PrimaryKey]
+        [PrimaryKeyAttribute]
         public int Id { get; set; }
-        [Required]
+        [RequiredAttribute]
         public string FirstName { get; set; }
-        [Required]
+        [RequiredAttribute]
         public string LastName { get; set; }
         public string FullName => FirstName + " " + LastName;
-        [Required]
+        [RequiredAttribute]
         public DateTime BirthDate { get; set; }
         public int StudentID { get; set; }
         public Student Student { get; set; }

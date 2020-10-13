@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWE3.TestApp", "SWE3.TestAp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWE3.Tests", "SWE3.Tests\SWE3.Tests.csproj", "{EC008485-601E-41CC-AEF2-B086367117A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWE3.SeppMap", "SWE3.SeppMap\SWE3.SeppMap.csproj", "{E710702C-FE72-47BF-A450-707CCD7E4B9C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWE3.SeppMap", "SWE3.SeppMapper\SWE3.SeppMapper.csproj", "{E710702C-FE72-47BF-A450-707CCD7E4B9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

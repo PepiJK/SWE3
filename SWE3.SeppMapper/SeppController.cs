@@ -3,27 +3,22 @@ using System.Collections.Generic;
 using System.Reflection;
 using SWE3.SeppMapper.Attributes;
 using SWE3.SeppMapper.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace SWE3.SeppMapper
 {
-    public class SeppController
+    public static class SeppController
     {
-        private List<SeppEntity> SeppEntities { get; set; }
+        public static IList<SeppEntity> SeppEntities { get; set; }
 
-        public SeppController(SeppContext context)
+        public static void Inititalize(SeppContext context)
         {
             var seppTypes = GetSeppSetTypes(context);
-            
-            foreach (var seppType in seppTypes)
-            {
-                GetSeppProperties(seppType);
-            }
+            SeppEntities = GetSeppEntities(seppTypes);    
         }
 
-        private IEnumerable<Type> GetSeppSetTypes(SeppContext context)
+        private static IList<Type> GetSeppSetTypes(SeppContext context)
         {
-            var types = new List<Type>();
+            var seppSetTypes = new List<Type>();
 
             foreach (var prop in context.GetType().GetProperties())
             {
@@ -32,41 +27,56 @@ namespace SWE3.SeppMapper
                     var genericType = prop.PropertyType.GenericTypeArguments[0];
                     if (prop.PropertyType == typeof(SeppSet<>).MakeGenericType(genericType))
                     {
-                        types.Add(genericType);
+                        seppSetTypes.Add(genericType);
                     } 
-                }
-                    
+                }   
             }
 
-            return types;
+            return seppSetTypes;
         }
 
-        private IEnumerable<SeppProperty> GetSeppProperties(Type type)
+        private static IList<SeppEntity> GetSeppEntities (IList<Type> seppTypes)
         {
-            Console.WriteLine(type);
+            var seppEntities = new List<SeppEntity>();
 
+            foreach (var seppType in seppTypes)
+            {
+                seppEntities.Add(new SeppEntity{
+                    Type = seppType,
+                    SeppProperties = new List<SeppProperty>(GetSeppProperties(seppType))
+                });
+            }
+
+            return seppEntities;
+        } 
+
+        private static IList<SeppProperty> GetSeppProperties(Type type)
+        {
             var seppProperties = new List<SeppProperty>();
 
             foreach(var prop in type.GetProperties())
             {
-                Console.WriteLine(prop.Name);
+                if (prop.GetSetMethod() == null) continue;
 
                 var isPrimary = false;
                 var isRequired = false;
                 foreach(var attr in prop.GetCustomAttributes())
                 {
-                    isPrimary = attr is PrimaryKey;
-                    isRequired = attr is Required;
+                    if(isPrimary) throw new Exception("There is already a primary key on the entity " + type);
+                    isPrimary = attr is PrimaryKeyAttribute;
+                    isRequired = attr is RequiredAttribute || attr is PrimaryKeyAttribute;
                 }
-
 
                 seppProperties.Add(new SeppProperty{
                     Name = prop.Name,
-                    SeppEntityType = type
+                    Type = prop.PropertyType.Name,
+                    SeppEntityType = type,
+                    IsPrimaryKey = isPrimary,
+                    IsRequired = isRequired
                 });
             }
         
             return seppProperties;
-        } 
+        }
     }
 }

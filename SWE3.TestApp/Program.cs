@@ -1,4 +1,5 @@
 ﻿using System;
+using SWE3.SeppMapper;
 using SWE3.TestApp.Models;
 
 namespace SWE3.TestApp
@@ -7,7 +8,7 @@ namespace SWE3.TestApp
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var context = new TestAppContext();
         }
     }
 }

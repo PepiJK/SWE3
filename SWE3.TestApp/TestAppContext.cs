@@ -5,6 +5,6 @@ namespace SWE3.TestApp
 {
     public class TestAppContext : SeppContext
     {
-        public SeppSet<Person> Person { get; set; }
+        public SeppSet<Person> Persons { get; set; }
     }
 }

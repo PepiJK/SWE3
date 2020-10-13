@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../SWE3.SeppMap/SWE3.SeppMap.csproj" />
+    <ProjectReference Include="../SWE3.SeppMapper/SWE3.SeppMapper.csproj" />
   </ItemGroup>
 
 </Project>

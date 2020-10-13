@@ -6,7 +6,7 @@ namespace SWE3.SeppMapper.Models
 {
     public class SeppEntity
     {
-        [PrimaryKey]
+        [PrimaryKeyAttribute]
         public Type Type { get; set; }
         public List<SeppProperty> SeppProperties { get; set; }
     }

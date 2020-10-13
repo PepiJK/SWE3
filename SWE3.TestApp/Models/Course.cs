@@ -5,8 +5,9 @@ namespace SWE3.TestApp.Models
 {
     public class Course
     {
+        [PrimaryKeyAttribute]
         public int Id { get; set; }
-        [Required]
+        [RequiredAttribute]
         public string Name { get; set; }
         public int ETCS { get; set; }
         public List<StudentCourse> StudentCourses { get; set; }

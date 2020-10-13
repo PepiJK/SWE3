@@ -1,7 +1,10 @@
+using SWE3.SeppMapper.Attributes;
+
 namespace SWE3.TestApp.Models
 {
     public class StudentCourse
     {
+        [PrimaryKeyAttribute]
         public int Id { get; set; }
         public int? CurrentGrade { get; set; }
         public int StudentID { get; set; }

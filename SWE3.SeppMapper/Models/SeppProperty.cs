@@ -5,11 +5,11 @@ namespace SWE3.SeppMapper.Models
 {
     public class SeppProperty
     {
-        [PrimaryKey]
+        [PrimaryKeyAttribute]
         public int Id { get; set; }
-        [Required]
+        [RequiredAttribute]
         public string Name { get; set; }
-        [Required]
+        [RequiredAttribute]
         public string Type { get; set; }
         public bool IsPrimaryKey { get; set; }
         public bool IsRequired { get; set; }
