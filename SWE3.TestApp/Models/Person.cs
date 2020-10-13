@@ -14,7 +14,7 @@ namespace SWE3.TestApp.Models
         public string FullName => FirstName + " " + LastName;
         [RequiredAttribute]
         public DateTime BirthDate { get; set; }
-        public int StudentID { get; set; }
+        public int StudentId { get; set; }
         public Student Student { get; set; }
     }
 }
