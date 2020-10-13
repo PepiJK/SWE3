@@ -5,12 +5,12 @@ namespace SWE3.TestApp.Models
 {
     public class University
     {
-        [PrimaryKeyAttribute]
+        [PrimaryKey]
         public int Id { get; set; }
-        [RequiredAttribute]
+        [Required]
         public string Name { get; set; }
-        [RequiredAttribute]
+        [Required]
         public string Address { get; set; }
-        public List<Student> Students { get; set; }
+        public IList<Student> Students { get; set; }
     }
 }

@@ -4,7 +4,7 @@ namespace SWE3.TestApp.Models
 {
     public class StudentCourse
     {
-        [PrimaryKeyAttribute]
+        [PrimaryKey]
         public int Id { get; set; }
         public int? CurrentGrade { get; set; }
         public int StudentId { get; set; }

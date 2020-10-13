@@ -60,17 +60,18 @@ namespace SWE3.SeppMapper
 
                 var isPrimary = false;
                 var isRequired = false;
+                // GetCustomAttribute(typeof(PrimaryKeyAttribute))
                 foreach(var attr in prop.GetCustomAttributes())
                 {
-                    if(isPrimary) throw new Exception("There is already a primary key on the entity " + type);
                     isPrimary = attr is PrimaryKeyAttribute;
                     isRequired = attr is RequiredAttribute || attr is PrimaryKeyAttribute;
                 }
 
+                if (seppProperties.Find(p => p.IsPrimaryKey) != null && isPrimary) throw new Exception("There is already a primary key on the entity " + type);
+
                 seppProperties.Add(new SeppProperty{
                     Name = prop.Name,
-                    Type = prop.PropertyType.Name,
-                    SeppEntityType = type,
+                    Type = prop.PropertyType,
                     IsPrimaryKey = isPrimary,
                     IsRequired = isRequired
                 });
