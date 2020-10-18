@@ -8,7 +8,7 @@
             // Setup SQLite connection
 
             SeppController.Inititalize(this);
-            var entities = SeppController.SeppEntities;
+            var entities = SeppController.Entities;
         }
     }
 }

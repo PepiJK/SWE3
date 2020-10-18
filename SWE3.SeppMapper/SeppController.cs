@@ -8,12 +8,12 @@ namespace SWE3.SeppMapper
 {
     public static class SeppController
     {
-        public static IList<SeppEntity> SeppEntities { get; set; }
+        public static IList<Entity> Entities { get; set; }
 
         public static void Inititalize(SeppContext context)
         {
-            var seppTypes = GetSeppSetTypes(context);
-            SeppEntities = GetSeppEntities(seppTypes);    
+            var types = GetSeppSetTypes(context);
+            Entities = GetEntities(types);    
         }
 
         private static IList<Type> GetSeppSetTypes(SeppContext context)
@@ -35,49 +35,39 @@ namespace SWE3.SeppMapper
             return seppSetTypes;
         }
 
-        private static IList<SeppEntity> GetSeppEntities (IList<Type> seppTypes)
+        private static IList<Entity> GetEntities (IList<Type> seppTypes)
         {
-            var seppEntities = new List<SeppEntity>();
+            var entities = new List<Entity>();
 
             foreach (var seppType in seppTypes)
             {
-                seppEntities.Add(new SeppEntity{
+                entities.Add(new Entity{
                     Type = seppType,
-                    SeppProperties = new List<SeppProperty>(GetSeppProperties(seppType))
+                    Properties = new List<Property>(GetSeppProperties(seppType))
                 });
             }
 
-            return seppEntities;
+            return entities;
         } 
 
-        private static IList<SeppProperty> GetSeppProperties(Type type)
+        private static IList<Property> GetSeppProperties(Type type)
         {
-            var seppProperties = new List<SeppProperty>();
+            var properties = new List<Property>();
 
             foreach(var prop in type.GetProperties())
             {
                 if (prop.GetSetMethod() == null) continue;
 
-                var isPrimary = false;
-                var isRequired = false;
-                // GetCustomAttribute(typeof(PrimaryKeyAttribute))
-                foreach(var attr in prop.GetCustomAttributes())
-                {
-                    isPrimary = attr is PrimaryKeyAttribute;
-                    isRequired = attr is RequiredAttribute || attr is PrimaryKeyAttribute;
-                }
-
-                if (seppProperties.Find(p => p.IsPrimaryKey) != null && isPrimary) throw new Exception("There is already a primary key on the entity " + type);
-
-                seppProperties.Add(new SeppProperty{
+                properties.Add(new Property{
                     Name = prop.Name,
                     Type = prop.PropertyType,
-                    IsPrimaryKey = isPrimary,
-                    IsRequired = isRequired
+                    IsPrimaryKey = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null,
+                    IsRequired = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null || prop.GetCustomAttribute(typeof(RequiredAttribute)) != null,
+                    ForeignKeyInfo = prop.GetCustomAttribute(typeof(ForeignKeyAttribute)) as ForeignKeyAttribute
                 });
             }
         
-            return seppProperties;
+            return properties;
         }
     }
 }

@@ -14,6 +14,7 @@ namespace SWE3.TestApp.Models
         public string FullName => FirstName + " " + LastName;
         [Required]
         public DateTime BirthDate { get; set; }
+        [ForeignKey(Type = typeof(Student))]
         public int StudentId { get; set; }
         public Student Student { get; set; }
     }

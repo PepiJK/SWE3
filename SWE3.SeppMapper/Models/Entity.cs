@@ -4,9 +4,9 @@ using SWE3.SeppMapper.Attributes;
 
 namespace SWE3.SeppMapper.Models
 {
-    public class SeppEntity
+    public class Entity
     {
         public Type Type { get; set; }
-        public IList<SeppProperty> SeppProperties { get; set; }
+        public IList<Property> Properties { get; set; }
     }
 }
