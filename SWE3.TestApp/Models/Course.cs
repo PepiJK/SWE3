@@ -9,7 +9,7 @@ namespace SWE3.TestApp.Models
         public int Id { get; set; }
         [Required]
         public string Name { get; set; }
-        public int ETCS { get; set; }
-        public IList<StudentCourse> StudentCourses { get; set; }
+        public int ECTS { get; set; }
+        public IEnumerable<StudentCourse> StudentCourses { get; set; }
     }
 }

@@ -1,22 +1,36 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Serilog;
 using SWE3.SeppMapper.Attributes;
 using SWE3.SeppMapper.Models;
+using System.Linq;
 
 namespace SWE3.SeppMapper
 {
     public static class SeppController
     {
-        public static IList<Entity> Entities { get; set; }
+        public static IEnumerable<Entity> Entities { get; set; }
 
         public static void Inititalize(SeppContext context)
         {
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/log.txt")
+                .CreateLogger();
+
+            Log.Debug("SeppController :: Init");
+
             var types = GetSeppSetTypes(context);
-            Entities = GetEntities(types);    
+            Entities = GetEntities(types);
+
+            Log.Debug($"SeppController :: Gathered {Entities.ToList().Count} Enities from {context.GetType().Name}");
+
+            SeppData.Initilize(Entities);
         }
 
-        private static IList<Type> GetSeppSetTypes(SeppContext context)
+        private static IEnumerable<Type> GetSeppSetTypes(SeppContext context)
         {
             var seppSetTypes = new List<Type>();
 
@@ -35,7 +49,7 @@ namespace SWE3.SeppMapper
             return seppSetTypes;
         }
 
-        private static IList<Entity> GetEntities (IList<Type> seppTypes)
+        private static IEnumerable<Entity> GetEntities (IEnumerable<Type> seppTypes)
         {
             var entities = new List<Entity>();
 
@@ -43,14 +57,14 @@ namespace SWE3.SeppMapper
             {
                 entities.Add(new Entity{
                     Type = seppType,
-                    Properties = new List<Property>(GetSeppProperties(seppType))
+                    Properties = GetSeppProperties(seppType)
                 });
             }
 
             return entities;
         } 
 
-        private static IList<Property> GetSeppProperties(Type type)
+        private static IEnumerable<Property> GetSeppProperties(Type type)
         {
             var properties = new List<Property>();
 
@@ -62,7 +76,7 @@ namespace SWE3.SeppMapper
                     Name = prop.Name,
                     Type = prop.PropertyType,
                     IsPrimaryKey = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null,
-                    IsRequired = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null || prop.GetCustomAttribute(typeof(RequiredAttribute)) != null,
+                    IsRequired = Nullable.GetUnderlyingType(prop.PropertyType) == null || prop.GetCustomAttribute(typeof(RequiredAttribute)) != null,
                     ForeignKeyInfo = prop.GetCustomAttribute(typeof(ForeignKeyAttribute)) as ForeignKeyAttribute
                 });
             }

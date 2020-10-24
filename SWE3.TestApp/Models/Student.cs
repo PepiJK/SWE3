@@ -9,12 +9,12 @@ namespace SWE3.TestApp.Models
         [PrimaryKey]
         public int Id { get; set; }
         public int CurrentSemester { get; set; }
-        [ForeignKey(Type = typeof(Person), ReferentialAction = ReferentialActions.Restrict)]
-        public int PersonID { get; set; }
+        [ForeignKey(ReferencingType = typeof(Person), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Restrict)]
+        public int PersonId { get; set; }
         public Person Person { get; set; }
-        [ForeignKey(Type = typeof(University), ReferentialAction = ReferentialActions.Restrict)]
+        [ForeignKey(ReferencingType = typeof(University), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Restrict)]
         public int UniversityId { get; set; }
         public University University { get; set; }
-        public IList<StudentCourse> StudentCourses { get; set; }
+        public IEnumerable<StudentCourse> StudentCourses { get; set; }
     }
 }

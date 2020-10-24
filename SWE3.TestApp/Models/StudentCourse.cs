@@ -7,10 +7,10 @@ namespace SWE3.TestApp.Models
         [PrimaryKey]
         public int Id { get; set; }
         public int? CurrentGrade { get; set; }
-        [ForeignKey(Type = typeof(Student))]
+        [ForeignKey(ReferencingType = typeof(Student), ReferencingColumn = "Id")]
         public int StudentId { get; set; }
         public Student Student { get; set; }
-        [ForeignKey(Type = typeof(Course))]
+        [ForeignKey(ReferencingType = typeof(Course), ReferencingColumn = "Id")]
         public int CourseId { get; set; }
         public Course Course { get; set; }
     }

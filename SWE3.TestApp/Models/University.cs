@@ -11,6 +11,6 @@ namespace SWE3.TestApp.Models
         public string Name { get; set; }
         [Required]
         public string Address { get; set; }
-        public IList<Student> Students { get; set; }
+        public IEnumerable<Student> Students { get; set; }
     }
 }

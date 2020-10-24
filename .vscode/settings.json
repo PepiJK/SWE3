@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "swe3",
+            "database": "${workspaceFolder:SWE3}/SWE3.TestApp/Data/sqlite.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}
