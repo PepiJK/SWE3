@@ -12,7 +12,7 @@ namespace SWE3.SeppMapper
     {
         public static IEnumerable<Entity> Entities { get; set; }
 
-        public static void Inititalize(SeppContext context)
+        public static void Inititalize(SeppContext context, string connection)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -27,7 +27,7 @@ namespace SWE3.SeppMapper
 
             Log.Debug($"SeppController :: Gathered {Entities.ToList().Count} Enities from {context.GetType().Name}");
 
-            SeppData.Initilize(Entities);
+            SeppData.Initilize(Entities, connection);
         }
 
         private static IEnumerable<Type> GetSeppSetTypes(SeppContext context)
@@ -77,6 +77,7 @@ namespace SWE3.SeppMapper
                     Type = prop.PropertyType,
                     IsPrimaryKey = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null,
                     IsRequired = Nullable.GetUnderlyingType(prop.PropertyType) == null || prop.GetCustomAttribute(typeof(RequiredAttribute)) != null,
+                    IsSerial = prop.GetCustomAttribute(typeof(SerialAttribute)) != null,
                     ForeignKeyInfo = prop.GetCustomAttribute(typeof(ForeignKeyAttribute)) as ForeignKeyAttribute
                 });
             }

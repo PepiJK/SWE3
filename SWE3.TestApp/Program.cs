@@ -8,7 +8,7 @@ namespace SWE3.TestApp
     {
         static void Main(string[] args)
         {
-            var context = new TestAppContext();
+            var context = new TestAppContext("Server=localhost;Port=5432;Database=sepptest;User Id=sepp;Password=123456;");
         }
     }
 }

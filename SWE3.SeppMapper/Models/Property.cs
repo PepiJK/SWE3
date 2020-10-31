@@ -10,6 +10,7 @@ namespace SWE3.SeppMapper.Models
         public Type Type { get; set; }
         public bool IsPrimaryKey { get; set; }
         public bool IsRequired { get; set; }
+        public bool IsSerial {get; set; }
         public ForeignKeyAttribute ForeignKeyInfo { get; set; }
     }
 }

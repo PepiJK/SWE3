@@ -6,6 +6,7 @@ namespace SWE3.TestApp.Models
     public class University
     {
         [PrimaryKey]
+        [Serial]
         public int Id { get; set; }
         [Required]
         public string Name { get; set; }

@@ -1,1 +1,1 @@
-# SWE3 ORMapper "SeppMap" by Josef Koch
+# SWE3 ORMapper "SeppMapper" by Josef Koch

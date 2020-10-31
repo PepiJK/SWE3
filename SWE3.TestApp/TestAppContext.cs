@@ -5,6 +5,7 @@ namespace SWE3.TestApp
 {
     public class TestAppContext : SeppContext
     {
+        public TestAppContext(string connection) : base(connection) { }
         public SeppSet<Person> Persons { get; set; }
         public SeppSet<Course> Courses { get; set; }
         public SeppSet<Student> Students { get; set; }

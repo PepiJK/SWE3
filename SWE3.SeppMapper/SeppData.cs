@@ -1,30 +1,32 @@
-using System.Collections;
 using System.Collections.Generic;
 using SWE3.SeppMapper.Models;
 using System.Linq;
 using Serilog;
-using Microsoft.Data.Sqlite;
-using System.IO;
 using System;
-using SqlKata;
 using SqlKata.Compilers;
 using SqlKata.Execution;
 using System.Text;
+using Npgsql;
+using SWE3.SeppMapper.Helpers;
 
 namespace SWE3.SeppMapper
 {
     public static class SeppData
     {
-        private static string _connection = "Data Source=Data/sqlite.db";
-        private static IEnumerable<Entity> Entities { get; set; }
-        private static IDictionary<Type, string> DotNet2SqliteTypeDict = new Dictionary<Type, string>{
-            {typeof(Int32), "INTEGER"}, {typeof(Nullable<Int32>), "INTEGER"}, {typeof(String), "TEXT"}, {typeof(DateTime), "TEXT"}
+        private static string _connection;
+        private static IEnumerable<Entity> _entities;
+        // TODO: PG
+        private static IDictionary<Type, string> DotNet2PgTypeDict = new Dictionary<Type, string>{
+            {typeof(Int32), "INTEGER"}, {typeof(Nullable<Int32>), "INTEGER"}, {typeof(String), "TEXT"}, {typeof(DateTime), "TIMESTAMP WITHOUT TIME ZONE"}
         };
 
-        public static void Initilize(IEnumerable<Entity> entities)
+        public static void Initilize(IEnumerable<Entity> entities, string connection)
         {
-            Entities = entities;
+            _entities = entities;
+            _connection = connection;
 
+
+            var newEntities = new List<Entity>();
             foreach (var entity in entities)
             {
                 if (TableExists(entity))
@@ -36,12 +38,13 @@ namespace SWE3.SeppMapper
                 {
                     Log.Debug($"SeppData :: Table {entity.Type.Name} does not exist, creating...");
                     CreateTable(entity);
+                    newEntities.Add(entity);
                     Log.Debug($"SeppData :: Created table {entity.Type.Name}");
                 }
             }
 
             // TODO: Setup Relations
-            foreach (var entity in entities)
+            foreach (var entity in newEntities)
             {
                 AddForeignKeys(entity);
             }
@@ -49,9 +52,9 @@ namespace SWE3.SeppMapper
 
         private static bool TableExists(Entity entity)
         {
-            using (var queryBuilder = new QueryFactory(new SqliteConnection(_connection), new SqliteCompiler()))
+            using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
             {
-                return queryBuilder.Query("sqlite_master").Select("name").Where("type", "table").Where("name", entity.Type.Name).Get().Count() == 1;
+                return queryBuilder.Query("information_schema.tables").Select("table_name").Where("table_name", entity.Type.Name.ToLower()).Get().Count() == 1;
             }
         }
 
@@ -59,42 +62,68 @@ namespace SWE3.SeppMapper
         {
             var props = entity.Properties.Where(p => p.ForeignKeyInfo != null);
 
-            using (var sqlite = new SqliteConnection(_connection))
+            using (var pg = new NpgsqlConnection(_connection))
             {
-                sqlite.Open();
+                pg.Open();
 
                 foreach (var prop in props)
                 {
                     Log.Debug($"SeppData :: Adding foreign key {prop.Name} to {entity.Type.Name}");
 
-                    var command = sqlite.CreateCommand();
-                    var stmt = new StringBuilder($"ALTER TABLE {entity.Type.Name} ADD COLUMN {prop.Name} {GetSqliteType(prop.Type)}");
+                    var command = pg.CreateCommand();
+                    var foreingKeyCommand = pg.CreateCommand();
+                    var stmt = new StringBuilder();
 
-                    // TODO: Add not null constraint (maybe sqlite forces foreign key to be default null) and referential action
+                    stmt.Append($"ALTER TABLE {entity.Type.Name} ADD COLUMN {prop.Name} {GetPostgresType(prop.Type)}");
+
+                    if (prop.IsRequired) stmt.Append(" NOT NULL");
 
                     stmt.Append($" REFERENCES {prop.ForeignKeyInfo.ReferencingType.Name}({prop.ForeignKeyInfo.ReferencingColumn})");
+
+                    switch (prop.ForeignKeyInfo.ReferentialAction)
+                    {
+                        case ReferentialActions.Cascade:
+                            stmt.Append(" ON DELETE CASCADE");
+                            break;
+
+                        case ReferentialActions.NoAction:
+                            stmt.Append(" ON DELETE NO ACTION");
+                            break;
+
+                        case ReferentialActions.SetNull:
+                            stmt.Append(" ON DELETE SET NULL");
+                            break;
+
+                        case ReferentialActions.Restrict:
+                            stmt.Append(" ON DELETE RESTRICT");
+                            break;
+
+                        default:
+                            stmt.Append(" ON DELETE NO ACTION");
+                            break;
+                    }
 
                     Log.Information(stmt.ToString());
                     command.CommandText = stmt.ToString();
                     command.ExecuteNonQuery();
                 }
             }
-            
+
         }
 
         private static void CreateTable(Entity entity)
         {
             var createTableStatement = BuildCreateStatement(entity);
 
-            using (var sqlite = new SqliteConnection(_connection))
+            using (var pg = new NpgsqlConnection(_connection))
             {
-                sqlite.Open();
-                var command = sqlite.CreateCommand();
+                pg.Open();
+                var command = pg.CreateCommand();
 
                 command.CommandText = createTableStatement;
                 Log.Information($"SeppData :: {command.CommandText}");
 
-                command.ExecuteNonQuery();                
+                command.ExecuteNonQuery();
             }
         }
 
@@ -107,10 +136,10 @@ namespace SWE3.SeppMapper
                 if (SkipProperty(prop)) continue;
 
                 stmt.Append($"{prop.Name} ");
-                stmt.Append(GetSqliteType(prop.Type));
 
-                // TODO: remove not null on primary key, maybe make int default 0?
-                    
+                if (!prop.IsSerial) stmt.Append(GetPostgresType(prop.Type));
+                if (prop.IsSerial) stmt.Append("SERIAL");
+
                 if (prop.IsPrimaryKey) stmt.Append(" PRIMARY KEY");
                 if (prop.IsRequired) stmt.Append(" NOT NULL");
 
@@ -123,12 +152,12 @@ namespace SWE3.SeppMapper
             return stmt.ToString();
         }
 
-        private static string GetSqliteType(Type dotNetType)
+        private static string GetPostgresType(Type dotNetType)
         {
-            string sqliteType;
-            if (DotNet2SqliteTypeDict.TryGetValue(dotNetType, out sqliteType))
+            string pgType;
+            if (DotNet2PgTypeDict.TryGetValue(dotNetType, out pgType))
             {
-                return sqliteType;
+                return pgType;
             }
             // TODO: Create custom Exception
             Log.Error($"SeppData :: Type {dotNetType.Name} is not supported.");
@@ -139,9 +168,9 @@ namespace SWE3.SeppMapper
         {
             if (property.ForeignKeyInfo != null) return true;
             if (property.Type.IsGenericType && property.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)) return true;
-            return Entities.Select(e => e.Type).Contains(property.Type);
+            return _entities.Select(e => e.Type).Contains(property.Type);
         }
 
-  
+
     }
 }

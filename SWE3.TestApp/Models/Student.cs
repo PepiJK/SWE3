@@ -7,6 +7,7 @@ namespace SWE3.TestApp.Models
     public class Student
     {
         [PrimaryKey]
+        [Serial]
         public int Id { get; set; }
         public int CurrentSemester { get; set; }
         [ForeignKey(ReferencingType = typeof(Person), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Restrict)]

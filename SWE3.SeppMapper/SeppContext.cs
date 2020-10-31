@@ -4,9 +4,9 @@ namespace SWE3.SeppMapper
 {
     public class SeppContext
     {
-        public SeppContext()
+        public SeppContext(string connection)
         {
-            SeppController.Inititalize(this);
+            SeppController.Inititalize(this, connection);
         }
     }
 }

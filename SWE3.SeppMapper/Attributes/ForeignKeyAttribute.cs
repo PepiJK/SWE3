@@ -7,6 +7,6 @@ namespace SWE3.SeppMapper.Attributes
     {
         public Type ReferencingType { get; set; }
         public string ReferencingColumn { get; set; }
-        public ReferentialActions ReferentialAction { get; set; } = ReferentialActions.Cascade;
+        public ReferentialActions ReferentialAction { get; set; } = ReferentialActions.NoAction;
     }
 }
