@@ -72,12 +72,15 @@ namespace SWE3.SeppMapper
             {
                 if (prop.GetSetMethod() == null) continue;
 
+                var isSerial = prop.GetCustomAttribute(typeof(SerialAttribute)) != null;
+                if (isSerial && prop.PropertyType != typeof(int)) throw new Exception($"Property {prop.Name} needs to be type int in model to be serial in database"); // TODO: Create custom Exception
+
                 properties.Add(new Property{
                     Name = prop.Name,
                     Type = prop.PropertyType,
                     IsPrimaryKey = prop.GetCustomAttribute(typeof(PrimaryKeyAttribute)) != null,
                     IsRequired = Nullable.GetUnderlyingType(prop.PropertyType) == null || prop.GetCustomAttribute(typeof(RequiredAttribute)) != null,
-                    IsSerial = prop.GetCustomAttribute(typeof(SerialAttribute)) != null,
+                    IsSerial = isSerial,
                     ForeignKeyInfo = prop.GetCustomAttribute(typeof(ForeignKeyAttribute)) as ForeignKeyAttribute
                 });
             }
