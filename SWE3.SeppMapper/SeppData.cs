@@ -25,38 +25,59 @@ namespace SWE3.SeppMapper
             _entities = entities;
             _connection = connection;
 
-            var currentTables = GetAllTablesFromDb();
-            var newEntities = new List<Entity>();
+            var remainingTables = GetAllTablesFromDb().ToList();
+            var newlyCreatedEntities = new List<Entity>();
+            var tablesToUpdate = new Dictionary<Entity, Table>();
 
             foreach (var entity in entities)
             {
-                if (currentTables.Where(t => t.Name == entity.Type.Name.ToLower()).Count() == 1)
+                if (remainingTables.Where(t => t.Name == entity.Type.Name.ToLower()).Count() == 1)
                 {
-                    var table = currentTables.First(t => t.Name == entity.Type.Name.ToLower());
-
-                    Log.Debug($"SeppData :: Table {table.Name} exists, updating...");
-                    UpdateTableColumns(entity, table);
-
-                    currentTables.ToList().Remove(table);
+                    var table = remainingTables.First(t => t.Name == entity.Type.Name.ToLower());
+                    tablesToUpdate.Add(entity, table);
+                    remainingTables.Remove(table);
                 }
                 else
                 {
-                    Log.Debug($"SeppData :: Table {entity.Type.Name} does not exist, creating...");
+                    Log.Debug($"SeppData :: Entity {entity.Type.Name} does not exist as table, creating table...");
                     CreateTable(entity);
-                    newEntities.Add(entity);
-                    Log.Debug($"SeppData :: Created table {entity.Type.Name}");
+                    newlyCreatedEntities.Add(entity);
                 }
             }
 
-            foreach (var table in currentTables)
+            foreach (var table in remainingTables)
             {
-                //TODO: Drop Tables
+                Log.Debug($"SeppData :: Dropping not needed remaining table {table.Name}...");
+                DropTable(table);
             }
 
-            // add contraints after tables have been created
-            foreach (var entity in newEntities)
+            foreach(var table in tablesToUpdate)
             {
+                // TODO: Also update foreign Keys
+                Log.Debug($"SeppData :: Table {table.Value.Name} exists, updating table...");
+                UpdateTableColumns(table.Key, table.Value);
+            }
+
+            foreach (var entity in newlyCreatedEntities)
+            {
+                Log.Debug($"SeppData :: Adding foreign key contraints from entity {entity.Type.Name} to corresponding table");
                 AddForeignKeyContraints(entity);
+            }
+        }
+
+        private static void DropTable(Table table)
+        {
+            var stmt = new StringBuilder($"DROP TABLE {table.Name} CASCADE");
+
+            Log.Information($"SeppData :: {stmt.ToString()}");
+
+            using (var pg = new NpgsqlConnection(_connection))
+            {
+                pg.Open();
+                var command = pg.CreateCommand();
+
+                command.CommandText = stmt.ToString();
+                command.ExecuteNonQuery();
             }
         }
 
@@ -179,6 +200,7 @@ namespace SWE3.SeppMapper
                         Columns = columns
                     });
                 }
+                
                 Log.Debug($"SeppData :: Gathered {tables.Count()} Tables from Database");
                 return tables;
             }
@@ -281,8 +303,6 @@ namespace SWE3.SeppMapper
 
                 foreach (var prop in props)
                 {
-                    Log.Debug($"SeppData :: Adding foreign key {prop.Name} to {entity.Type.Name}");
-
                     var command = pg.CreateCommand();
                     var stmt = new StringBuilder();
 
@@ -312,6 +332,7 @@ namespace SWE3.SeppMapper
                             break;
                     }
 
+                    Log.Debug($"SeppData :: Adding foreign key {prop.Name} to {entity.Type.Name}");
                     Log.Information($"SeppData :: {stmt.ToString()}");
                     command.CommandText = stmt.ToString();
                     command.ExecuteNonQuery();
@@ -331,9 +352,10 @@ namespace SWE3.SeppMapper
 
                 command.CommandText = createTableStatement;
                 Log.Information($"SeppData :: {command.CommandText}");
-
                 command.ExecuteNonQuery();
             }
+
+            Log.Debug($"SeppData :: Created table {entity.Type.Name.ToLower()}");
         }
 
         private static string BuildCreateStatement(Entity entity)
@@ -370,7 +392,7 @@ namespace SWE3.SeppMapper
             }
             
             Log.Error($"SeppData :: Type {dotNetType.Name} is not supported."); 
-            throw new Exception($"Type {dotNetType.Name} is not supported."); // TODO: Create custom Exception
+            throw new Exception($"Type {dotNetType.Name} is not supported. If its an entity type, you should add it to your context class."); // TODO: Create custom Exception
         }
 
         private static bool SkipProperty(Property property)

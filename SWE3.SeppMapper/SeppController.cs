@@ -20,12 +20,14 @@ namespace SWE3.SeppMapper
                 .WriteTo.File("Logs/log.txt")
                 .CreateLogger();
 
-            Log.Debug("SeppController :: Init");
-
+            Log.Debug($"SeppController :: Gathering information on all provided entities from {context.GetType().Name}...");
             var types = GetSeppSetTypes(context);
             Entities = GetEntities(types);
+            Log.Debug($"SeppController :: done, gathered {Entities.Count()} enities from {context.GetType().Name}");
 
-            Log.Debug($"SeppController :: Gathered {Entities.ToList().Count} Enities from {context.GetType().Name}");
+            Log.Debug($"SeppController :: Checking foreign key contraints of all entities...");
+            CheckForeignKeyConstraints(Entities);
+            Log.Debug($"SeppController :: done, everything seems fine");
 
             SeppData.Initilize(Entities, connection);
         }
@@ -73,7 +75,12 @@ namespace SWE3.SeppMapper
                 if (prop.GetSetMethod() == null) continue;
 
                 var isSerial = prop.GetCustomAttribute(typeof(SerialAttribute)) != null;
-                if (isSerial && prop.PropertyType != typeof(int)) throw new Exception($"Property {prop.Name} needs to be type int in model to be serial in database"); // TODO: Create custom Exception
+
+                if (isSerial && prop.PropertyType != typeof(int))
+                {
+                    Log.Error($"Property {prop.Name} needs to be type int in model {type.Name} to be serial in database");
+                    throw new Exception($"Property {prop.Name} needs to be type int in model {type.Name} to be serial in database"); // TODO: Create custom Exception
+                }
 
                 properties.Add(new Property{
                     Name = prop.Name,
@@ -86,6 +93,32 @@ namespace SWE3.SeppMapper
             }
         
             return properties;
+        }
+
+        private static void CheckForeignKeyConstraints(IEnumerable<Entity> entities)
+        {
+            foreach (var entity in entities)
+            {
+                var foreignKeyProperties = entity.Properties.Where(p => p.ForeignKeyInfo != null);
+                foreach (var foreignKey in foreignKeyProperties)
+                {
+                    if (entities.Where(e => e.Type == foreignKey.ForeignKeyInfo.ReferencingType).Count() == 1)
+                    {
+                        var matchedEntityType = entities.Where(e => e.Type == foreignKey.ForeignKeyInfo.ReferencingType).First();
+                        var primaryKeys = matchedEntityType.Properties.Where(p => p.IsPrimaryKey);
+                        if (primaryKeys.Where(p => p.Name == foreignKey.ForeignKeyInfo.ReferencingColumn).Count() != 1)
+                        {
+                            Log.Error($"Referencing column {foreignKey.ForeignKeyInfo.ReferencingColumn} on foreign key {foreignKey.Name} on entity {entity.Type.Name} is not a primary key");
+                            throw new Exception($"Referencing column {foreignKey.ForeignKeyInfo.ReferencingColumn} on foreign key {foreignKey.Name} on entity {entity.Type.Name} is not a primary key"); // TODO: Create custom Exception
+                        }
+                    }
+                    else
+                    {
+                        Log.Error($"Cannot find referencing type {foreignKey.ForeignKeyInfo.ReferencingType} in provided context");
+                        throw new Exception($"Cannot find referencing type {foreignKey.ForeignKeyInfo.ReferencingType} in provided context"); // TODO: Create custom Exception
+                    }
+                }
+            }
         }
     }
 }
