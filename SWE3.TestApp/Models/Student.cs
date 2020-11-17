@@ -10,10 +10,10 @@ namespace SWE3.TestApp.Models
         [Serial]
         public int Id { get; set; }
         public int CurrentSemester { get; set; }
-        [ForeignKey(ReferencingType = typeof(Person), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Restrict)]
+        [ForeignKey(ReferencingType = typeof(Person), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Cascade)]
         public int PersonId { get; set; }
         public Person Person { get; set; }
-        [ForeignKey(ReferencingType = typeof(University), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Restrict)]
+        [ForeignKey(ReferencingType = typeof(University), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.Cascade)]
         public int UniversityId { get; set; }
         public University University { get; set; }
         public IEnumerable<StudentCourse> StudentCourses { get; set; }

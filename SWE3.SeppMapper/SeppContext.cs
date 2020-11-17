@@ -2,11 +2,14 @@
 
 namespace SWE3.SeppMapper
 {
+    /// <summary>Holds entities in form of SeppSet lists and initializes database.</summary>
     public class SeppContext
     {
-        public SeppContext(string connection)
+        /// <summary>Initializes database.</summary>
+        /// <param name="connection"></param>
+        protected SeppContext(string connection)
         {
-            SeppController.Inititalize(this, connection);
+            SeppEntityController.Initialize(this, connection);
         }
     }
 }
