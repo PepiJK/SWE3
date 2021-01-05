@@ -13,14 +13,14 @@ namespace SWE3.SeppMapper
     /// <summary>Manages database.</summary>
     public class SeppDataController
     {
-        /// <summary>Create table statements.</summary>
-        private readonly CreateStatements _createStatements;
+        /// <summary>Create table and insert statements.</summary>
+        private readonly CreateInsertStatements _createStatements;
         
-        /// <summary>Drop table statements.</summary>
-        private readonly DropStatements _dropStatements;
+        /// <summary>Drop table nad delete statements.</summary>
+        private readonly DropDeleteStatements _dropStatements;
         
-        /// <summary>Alter table statements.</summary>
-        private readonly AlterStatements _alterStatements;
+        /// <summary>Alter table and update statements.</summary>
+        private readonly AlterUpdateStatements _alterStatements;
         
         /// <summary>Select statements.</summary>
         private readonly SelectStatements _selectStatements;
@@ -30,12 +30,40 @@ namespace SWE3.SeppMapper
         /// <param name="connection"></param>
         public SeppDataController(IEnumerable<Entity> entities, string connection)
         {
-            _createStatements = new CreateStatements(connection);
-            _dropStatements = new DropStatements(connection);
-            _alterStatements = new AlterStatements(connection);
+            _createStatements = new CreateInsertStatements(connection);
+            _dropStatements = new DropDeleteStatements(connection);
+            _alterStatements = new AlterUpdateStatements(connection);
             _selectStatements = new SelectStatements(connection);
 
             UpdateDatabase(entities);
+        }
+
+        /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <returns>Queried entities.</returns>
+        public IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity : class
+        {
+            return _selectStatements.GetAllRowsFromDb<TEntity>();
+        }
+
+        /// <summary>Saves provided entityToSave in the db according to the provided dbEntity.</summary>
+        /// <returns>The newly saved entity.</returns>
+        public TEntity SaveEntity<TEntity>(TEntity entityToSave, Entity dbEntity) where TEntity: class
+        {
+            var dataDict = new Dictionary<string, object>();
+            var pks = dbEntity.Properties.Where(p => p.IsPrimaryKey).Select(p => p.Name.ToLower());
+            
+            foreach(var prop in dbEntity.Properties)
+            {
+                var propValue = entityToSave.GetType().GetProperty(prop.Name).GetValue(entityToSave, null);
+
+                if (propValue == null) continue;
+                if (prop.IsPrimaryKey && prop.Type == typeof(int) && (int) propValue == 0) continue;
+
+                dataDict.Add(prop.Name.ToLower(), propValue);
+            }
+
+            var newPks = _createStatements.InsertRow(dbEntity.Type.Name.ToLower(), dataDict, pks);
+            return _selectStatements.GetEntity<TEntity>(newPks);
         }
 
         /// <summary>Update database based on the provided entities.</summary>
@@ -133,7 +161,7 @@ namespace SWE3.SeppMapper
             // Add properties to table which have not been removed from entityProps list before
             foreach (var prop in entityProps)
             {
-                if (SeppEntityController.IsPropertySkippable(prop)) continue;
+                if (SeppContextController.IsPropertySkippable(prop)) continue;
                 if (table.HasRows && prop.IsRequired)
                 {
                     Log.Error($"SeppDataController :: New column {prop.Name} cannot be added because it is not nullable and table {table.Name} holds data");

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using Npgsql;
@@ -23,6 +24,36 @@ namespace SWE3.SeppMapper.Statements
             _connection = connection;
         }
 
+        /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <returns>Queried entities.</returns>
+        public IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity : class
+        {
+            using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
+            {
+                Log.Debug($"SelectStatements :: Select all rows from table {typeof(TEntity).Name.ToLower()}");
+                return queryBuilder.Query(typeof(TEntity).Name.ToLower()).Select("*").Get<TEntity>();
+            }
+        }
+
+        /// <summary>Gets the first row of the provided TEntity type where the provided primary key(s) match</summary>
+        /// <returns>Entity with matching primary key(s)</returns>
+        public TEntity GetEntity<TEntity>(IDictionary<string, object> primaryKeys) where TEntity : class
+        {
+            using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
+            {
+                Log.Debug($"SelectStatements :: Select one row from table {typeof(TEntity).Name.ToLower()} by its primary key(s)");
+
+                var query = queryBuilder.Query(typeof(TEntity).Name.ToLower()).Select("*");
+
+                foreach (var pk in primaryKeys)
+                {
+                    query.Where(pk.Key, pk.Value);
+                }
+
+                return query.FirstOrDefault<TEntity>();
+            }
+        }
+
         /// <summary>Check if a table with this name exists.</summary>
         /// <param name="tableName"></param>
         /// <returns></returns>
@@ -30,6 +61,7 @@ namespace SWE3.SeppMapper.Statements
         {
             using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
             {
+                Log.Debug($"SelectStatements :: Check if table {tableName} exists");
                 return queryBuilder.Query("information_schema.tables").Select("table_name").Where("table_name", tableName).Get().Count() == 1;
             }
         }
@@ -115,7 +147,7 @@ namespace SWE3.SeppMapper.Statements
                         foreignKeyInfoDict.Add(
                             reader.GetString(0),
                             new ColumnForeignKeyInfo{
-                                ConstraintName =  reader.GetString(1),
+                                ConstraintName = reader.GetString(1),
                                 ReferencingTable = reader.GetString(2),
                                 ReferencingColumn = reader.GetString(3)
                             }

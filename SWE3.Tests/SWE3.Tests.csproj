@@ -9,10 +9,12 @@
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0"/>
+     <PackageReference Include="Npgsql" Version="4.1.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="../SWE3.SeppMapper/SWE3.SeppMapper.csproj" />
+    <ProjectReference Include="../SWE3.TestApp/SWE3.TestApp.csproj" />
   </ItemGroup>
 
 </Project>

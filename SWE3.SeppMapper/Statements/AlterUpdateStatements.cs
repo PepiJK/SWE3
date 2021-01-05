@@ -8,15 +8,15 @@ using SWE3.SeppMapper.Models;
 
 namespace SWE3.SeppMapper.Statements
 {
-    /// <summary>Postgres alter table commands.</summary>
-    public class AlterStatements
+    /// <summary>Postgres alter table and update commands.</summary>
+    public class AlterUpdateStatements
     {
         /// <summary>Holds the database connection string.</summary>
         private readonly string _connection;
 
         /// <summary>Set the database connection string.</summary>
         /// <param name="connection"></param>
-        public AlterStatements(string connection)
+        public AlterUpdateStatements(string connection)
         {
             _connection = connection;
         }

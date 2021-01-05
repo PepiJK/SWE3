@@ -6,15 +6,15 @@ using SWE3.SeppMapper.Models;
 
 namespace SWE3.SeppMapper.Statements
 {
-    /// <summary>Postgres drop table commands.</summary>
-    public class DropStatements
+    /// <summary>Postgres drop table and delete commands.</summary>
+    public class DropDeleteStatements
     {
         /// <summary>Holds the database connection string.</summary>
         private readonly string _connection;
         
         /// <summary>Set the database connection string.</summary>
         /// <param name="connection"></param>
-        public DropStatements(string connection)
+        public DropDeleteStatements(string connection)
         {
             _connection = connection;
         }

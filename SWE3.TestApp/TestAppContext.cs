@@ -8,10 +8,10 @@ namespace SWE3.TestApp
     {
         public TestAppContext(string connection) : base(connection) {}
 
-        public SeppSet<Person> Persons { get; set; }
-        public SeppSet<Course> Courses { get; set; }
-        public SeppSet<Student> Students { get; set; }
-        public SeppSet<StudentCourse> StudentCourses { get; set; }
-        public SeppSet<University> Universities { get; set; }
+        public SeppSet<Person> Persons { get; set; } = new SeppSet<Person>();
+        public SeppSet<Course> Courses { get; set; } = new SeppSet<Course>();
+        public SeppSet<Student> Students { get; set; } = new SeppSet<Student>();
+        public SeppSet<StudentCourse> StudentCourses { get; set; } = new SeppSet<StudentCourse>();
+        public SeppSet<University> Universities { get; set; } = new SeppSet<University>();
     }
 }

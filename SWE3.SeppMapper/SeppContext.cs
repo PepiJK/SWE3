@@ -1,6 +1,4 @@
-﻿using Serilog;
-
-namespace SWE3.SeppMapper
+﻿namespace SWE3.SeppMapper
 {
     /// <summary>Holds entities in form of SeppSet lists and initializes database.</summary>
     public class SeppContext
@@ -9,7 +7,7 @@ namespace SWE3.SeppMapper
         /// <param name="connection"></param>
         protected SeppContext(string connection)
         {
-            SeppEntityController.Initialize(this, connection);
+            SeppContextController.Initialize(this, connection);
         }
     }
 }

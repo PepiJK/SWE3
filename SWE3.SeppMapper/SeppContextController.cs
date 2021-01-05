@@ -10,10 +10,13 @@ using SWE3.SeppMapper.Exceptions;
 namespace SWE3.SeppMapper
 {
     /// <summary>Manages entities from the SeppContext.</summary>
-    public static class SeppEntityController
+    public static class SeppContextController
     {
         /// <summary>Entities defined in the SeppContext.</summary>
         private static IEnumerable<Entity> Entities { get; set; }
+
+        /// <summary>SeppDataController responsible for controlling db access.</summary>
+        private static SeppDataController SeppDataController { get; set; }
 
         /// <summary>Gather metadata from SeppContext, check for correctness and update database.</summary>
         /// <param name="context"></param>
@@ -26,18 +29,18 @@ namespace SWE3.SeppMapper
                 .WriteTo.File("Logs/log.txt")
                 .CreateLogger();
 
-            Log.Debug($"SeppEntityController :: Gathering information on all provided entities from {context.GetType().Name}...");
+            Log.Debug($"SeppContextController :: Gathering information on all provided entities from {context.GetType().Name}...");
             var types = GetSeppSetTypes(context);
-            Entities = GetEntities(types).ToList();
-            Log.Debug($"SeppEntityController :: done, gathered {Entities.Count()} entities from {context.GetType().Name}");
+            Entities = GetEntities(types);
+            Log.Debug($"SeppContextController :: done, gathered {Entities.Count()} entities from {context.GetType().Name}");
 
-            Log.Debug($"SeppEntityController :: Checking foreign key constraints of all entities...");
+            Log.Debug($"SeppContextController :: Checking foreign key constraints of all entities...");
             CheckForeignKeyConstraints(Entities);
-            Log.Debug($"SeppEntityController :: done, everything seems fine");
+            Log.Debug($"SeppContextController :: done, everything seems fine");
 
-            Log.Debug($"SeppEntityController :: Updating database according to gathered entities...");
-            var dataController = new SeppDataController(Entities, connection);
-            Log.Debug($"SeppEntityController :: done updating, database is up to date");
+            Log.Debug($"SeppContextController :: Updating database according to gathered entities...");
+            SeppDataController = new SeppDataController(Entities, connection);
+            Log.Debug($"SeppContextController :: done updating, database is up to date");
         }
 
         /// <summary>Check if property of entity can be skipped for table creation and updating.</summary>
@@ -48,6 +51,20 @@ namespace SWE3.SeppMapper
             if (property.Type.IsGenericType && property.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>)) return true;
             return Entities.Select(e => e.Type).Contains(property.Type);
         }
+
+        /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <returns>Queried entities.</returns>
+        public static IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity: class
+        {
+            return SeppDataController.GetAllRowsFromDb<TEntity>();
+        }
+
+        /// <summary>Saves provided entity in the db.</summary>
+        /// <returns>The newly saved entity.</returns>
+        public static TEntity SaveEntity<TEntity>(TEntity entity) where TEntity: class
+        {
+            return SeppDataController.SaveEntity<TEntity>(entity, Entities.Single(e => e.Type == typeof(TEntity)));
+        } 
 
         /// <summary>Gather list of types of the all SeppSet properties in SeppContext.</summary>
         /// <param name="context"></param>
@@ -105,7 +122,7 @@ namespace SWE3.SeppMapper
 
                 if (isSerial && prop.PropertyType != typeof(int))
                 {
-                    Log.Error($"SeppEntityController :: Property {prop.Name} needs to be type int in model {type.Name} to be serial in database");
+                    Log.Error($"SeppContextController :: Property {prop.Name} needs to be type int in model {type.Name} to be serial in database");
                     throw new SerialAttributeException($"Property {prop.Name} needs to be type int in model {type.Name} to be serial in database");
                 }
 
@@ -138,13 +155,13 @@ namespace SWE3.SeppMapper
                         var primaryKeys = matchedEntityType.Properties.Where(p => p.IsPrimaryKey);
                         if (primaryKeys.Count(p => p.Name == foreignKey.ForeignKeyInfo.ReferencingColumn) != 1)
                         {
-                            Log.Error($"SeppEntityController :: Referencing column {foreignKey.ForeignKeyInfo.ReferencingColumn} on foreign key {foreignKey.Name} on entity {entity.Type.Name} is not a primary key");
+                            Log.Error($"SeppContextController :: Referencing column {foreignKey.ForeignKeyInfo.ReferencingColumn} on foreign key {foreignKey.Name} on entity {entity.Type.Name} is not a primary key");
                             throw new ForeignKeyAttributeException($"Referencing column {foreignKey.ForeignKeyInfo.ReferencingColumn} on foreign key {foreignKey.Name} on entity {entity.Type.Name} is not a primary key");
                         }
                     }
                     else
                     {
-                        Log.Error($"SeppEntityController :: Cannot find referencing type {foreignKey.ForeignKeyInfo.ReferencingType} in provided context");
+                        Log.Error($"SeppContextController :: Cannot find referencing type {foreignKey.ForeignKeyInfo.ReferencingType} in provided context");
                         throw new ForeignKeyAttributeException($"Cannot find referencing type {foreignKey.ForeignKeyInfo.ReferencingType} in provided context");
                     }
                 }
