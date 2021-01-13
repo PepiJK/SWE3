@@ -74,13 +74,14 @@ namespace SWE3.Tests
                 BirthDate = DateTime.Now
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
+            var dbPerson = context.Persons.Create(newPerson);
             var dbPersonFromList = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
 
             Assert.AreEqual(newPerson.FullName, dbPerson.FullName);
             Assert.NotNull(dbPerson.Id);
             Assert.NotZero(dbPerson.Id);
-            Assert.AreEqual(dbPerson, dbPersonFromList);
+            Assert.AreEqual(dbPerson.Id, dbPersonFromList.Id);
+            Assert.AreEqual(dbPerson.FullName, dbPersonFromList.FullName);
         }
 
         [Test]
@@ -96,7 +97,7 @@ namespace SWE3.Tests
                 }
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
+            var dbPerson = context.Persons.Create(newPerson);
             var dbPersonFromList = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
 
             Assert.AreEqual(newPerson.FullName, dbPerson.FullName);
@@ -106,7 +107,8 @@ namespace SWE3.Tests
             Assert.NotNull(dbPerson.Student.Id);
             Assert.NotZero(dbPerson.Student.Id);
             Assert.AreEqual(dbPerson.Id, dbPerson.Student.PersonId);
-            Assert.AreEqual(dbPerson, dbPersonFromList);
+            Assert.AreEqual(dbPerson.Id, dbPersonFromList.Id);
+            Assert.AreEqual(dbPerson.FullName, dbPersonFromList.FullName);
         }
 
         [Test]
@@ -126,21 +128,22 @@ namespace SWE3.Tests
                 Name = "SWE3"
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
+            var dbPerson = context.Persons.Create(newPerson);
             var dbPersonFromList = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
-            var dbCourse = context.Courses.Add(newCourse);
+            var dbCourse = context.Courses.Create(newCourse);
             var dbCourseFromList = context.Courses.Get().FirstOrDefault(c => c.Id == dbCourse.Id);
-            var dbStudentCourse = context.StudentCourses.Add(new StudentCourse {
+            var dbStudentCourse = context.StudentCourses.Create(new StudentCourse {
                 CourseId = dbCourse.Id,
                 StudentId = dbPerson.Student.Id
             });
             var dbStudenCourseFromList = context.StudentCourses.Get().FirstOrDefault(sc => sc.CourseId == dbCourse.Id && sc.StudentId == dbPerson.StudentId);
 
-            Assert.AreEqual(dbCourse, dbStudentCourse.Course);
-            Assert.AreEqual(dbPerson.Student, dbStudentCourse.Student);
-            Assert.AreEqual(dbPerson, dbPersonFromList);
-            Assert.AreEqual(dbCourse, dbCourseFromList);
-            Assert.AreEqual(dbStudentCourse, dbStudenCourseFromList);
+            Assert.AreEqual(dbCourse.Id, dbStudentCourse.Course.Id);
+            Assert.AreEqual(dbPerson.Student.Id, dbStudentCourse.Student.Id);
+            Assert.AreEqual(dbPerson.Id, dbPersonFromList.Id);
+            Assert.AreEqual(dbCourse.Id, dbCourseFromList.Id);
+            Assert.AreEqual(dbStudentCourse.CourseId, dbStudenCourseFromList.CourseId);
+            Assert.AreEqual(dbStudentCourse.Course.Id, dbStudenCourseFromList.Course.Id);
         }
 
         [Test]
@@ -153,13 +156,13 @@ namespace SWE3.Tests
                 BirthDate = DateTime.Now
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
+            var dbPerson = context.Persons.Create(newPerson);
             dbPerson.FirstName = "Joe";
             var dbUpdatedPerson = context.Persons.Update(dbPerson);
             var dbUpdatedPersonFromList = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
 
-            Assert.AreEqual(dbPerson, dbUpdatedPerson);
-            Assert.AreEqual(dbPerson, dbUpdatedPersonFromList);
+            Assert.AreEqual(dbPerson.FirstName, dbUpdatedPerson.FirstName);
+            Assert.AreEqual(dbPerson.FirstName, dbUpdatedPersonFromList.FirstName);
         }
 
         [Test]
@@ -175,14 +178,16 @@ namespace SWE3.Tests
                 }
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
+            var dbPerson = context.Persons.Create(newPerson);
             dbPerson.Student.CurrentSemester = 6;
             dbPerson.FirstName = "Joe";
             var dbUpdatedPerson = context.Persons.Update(dbPerson);
             var dbUpdatedPersonFromList = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
 
-            Assert.AreEqual(dbPerson, dbUpdatedPerson);
-            Assert.AreEqual(dbPerson, dbUpdatedPersonFromList);
+            Assert.AreEqual(dbPerson.Id, dbUpdatedPerson.Id);
+            Assert.AreEqual(dbPerson.FullName, dbUpdatedPerson.FullName);
+            Assert.AreEqual(dbPerson.Id, dbUpdatedPersonFromList.Id);
+            Assert.AreEqual(dbPerson.Student.Id, dbUpdatedPersonFromList.Student.Id);
         }
 
         [Test]
@@ -202,9 +207,9 @@ namespace SWE3.Tests
                 Name = "SWE3"
             };
 
-            var dbPerson = context.Persons.Add(newPerson);
-            var dbCourse = context.Courses.Add(newCourse);
-            var dbStudentCourse = context.StudentCourses.Add(new StudentCourse {
+            var dbPerson = context.Persons.Create(newPerson);
+            var dbCourse = context.Courses.Create(newCourse);
+            var dbStudentCourse = context.StudentCourses.Create(new StudentCourse {
                 CourseId = dbCourse.Id,
                 StudentId = dbPerson.Student.Id
             });
@@ -213,8 +218,8 @@ namespace SWE3.Tests
             var dbUpdatedStudenCourse = context.StudentCourses.Update(dbStudentCourse);
             var dbUpdatedStudenCourseFromList = context.StudentCourses.Get().FirstOrDefault(sc => sc.CourseId == dbCourse.Id && sc.StudentId == dbPerson.StudentId);
 
-            Assert.AreEqual(dbStudentCourse, dbUpdatedStudenCourse);
-            Assert.AreEqual(dbStudentCourse, dbUpdatedStudenCourseFromList);
+            Assert.AreEqual(dbStudentCourse.CurrentGrade, dbUpdatedStudenCourse.CurrentGrade);
+            Assert.AreEqual(dbStudentCourse.CurrentGrade, dbUpdatedStudenCourseFromList.CurrentGrade);
         }
 
         [Test]
@@ -227,11 +232,42 @@ namespace SWE3.Tests
                 BirthDate = DateTime.Now
             };
             
-            var dbPerson = context.Persons.Add(newPerson);
-            context.Persons.Remove(dbPerson);
+            var dbPerson = context.Persons.Create(newPerson);
+            context.Persons.Delete(dbPerson);
             var dbRemovedPerson = context.Persons.Get().FirstOrDefault(p => p.Id == dbPerson.Id);
 
             Assert.IsNull(dbRemovedPerson);
+        }
+
+        [Test]
+        public void Should_remove_entity_with_underlying_entity()
+        {
+            var context = new TestAppContext(connection);
+
+            var newPersonDb = context.Persons.Create(new Person {
+                FirstName = "Josef",
+                LastName = "Koch",
+                BirthDate = DateTime.Now
+            });
+            var newUniDb = context.Universities.Create(new University {
+                Name = "FH",
+                Address = "Wien"
+            });
+            var newStudentDb = context.Students.Create(new Student {
+                CurrentSemester = 5,
+                PersonId = newPersonDb.Id,
+                UniversityId = newUniDb.Id
+            });
+
+            newPersonDb.StudentId = newStudentDb.Id;
+            var updatedPersonDb = context.Persons.Update(newPersonDb);
+
+            context.Persons.Delete(updatedPersonDb);
+            var dbRemovedPerson = context.Persons.FirstOrDefault(p => p.Id == updatedPersonDb.Id);
+            var dbRemovedStudent = context.Students.FirstOrDefault(p => p.Id == newStudentDb.Id);
+
+            Assert.IsNull(dbRemovedPerson);
+            Assert.IsNull(dbRemovedStudent);
         }
 
     }

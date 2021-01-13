@@ -8,9 +8,6 @@ namespace SWE3.SeppMapper
     /// <typeparam name="TEntity"></typeparam>
     public class SeppSet<TEntity>: List<TEntity> where TEntity: class
     {
-        /// <summary>Cache of this entity.</summary>
-        private SeppSet<TEntity> Cache { get; set; }
-
         /// <summary>Base List contructor.</summary>
         public SeppSet() : base() {}
 
@@ -18,24 +15,28 @@ namespace SWE3.SeppMapper
         public SeppSet(IEnumerable<TEntity> collection) : base(collection) {}
 
 
-        /// <summary>Get data of this entity from cache or from db.</summary>
-        /// <returns>SeppSet of this entity.</returns>
+        /// <summary>Gets all rows of this entity from the db and sets this SeppSet.</summary>
+        /// <returns>This SeppSet</returns>
         public SeppSet<TEntity> Get() 
         {
-            return Cache ?? SetCacheAndElements();
+            var data = SeppContextController.GetAllRowsFromDb<TEntity>();
+
+            base.Clear();
+            base.AddRange(data);
+
+            return this;
         }
 
         /// <summary>Get data by a specific predicate.</summary>
         /// <returns>SeppSet of this entity.</returns>
-        public SeppSet<TEntity> Get(Func<TEntity, bool> predicate) 
+        public SeppSet<TEntity> Where(Func<TEntity, bool> predicate) 
         {
             throw new NotImplementedException();
         }
 
-
         /// <summary>Adds a new entity and persits its data in the db.</summary>
         /// <returns>The newly persited entity.</returns>
-        public new TEntity Add(TEntity entity)
+        public TEntity Create(TEntity entity)
         {
             var newEntity = SeppContextController.SaveEntity<TEntity>(entity);
 
@@ -45,32 +46,22 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Removes a given entity based on its primary key.</summary>
-        public new void Remove(TEntity entity)
+        public void Delete(TEntity entity)
         {
-            throw new NotImplementedException();
-            //base.Remove(entity);
+            SeppContextController.RemoveEntity<TEntity>(entity);
+            base.Remove(entity);
         }
 
         /// <summary>Updates a given entity based on its primary key.</summary>
         /// <returns>The updated entity</returns>
         public TEntity Update(TEntity entity)
         {
-            throw new NotImplementedException();
-            //base.Remove(entity);
-            //base.Add(entity);
+            var updatedEntity = SeppContextController.UpdateEntity<TEntity>(entity);
+
+            base.Remove(entity);
+            base.Add(updatedEntity);
+
+            return updatedEntity;
         }
-
-        /// <summary>Queries db and sets cache and SeppSet elements.</summary>
-        /// <returns>This SeppSet with updated cache.</returns>
-        private SeppSet<TEntity> SetCacheAndElements()
-        {
-            var data = SeppContextController.GetAllRowsFromDb<TEntity>();
-
-            Cache = new SeppSet<TEntity>(data);
-            base.AddRange(Cache);
-
-            return this;
-        }
-
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using SWE3.SeppMapper.Attributes;
+using SWE3.SeppMapper.Helpers;
 
 namespace SWE3.TestApp.Models
 {
@@ -15,7 +16,7 @@ namespace SWE3.TestApp.Models
         public string FullName => FirstName + " " + LastName;
         [Required]
         public DateTime BirthDate { get; set; }
-        [ForeignKey(ReferencingType = typeof(Student), ReferencingColumn = "Id")]
+        [ForeignKey(ReferencingType = typeof(Student), ReferencingColumn = "Id", ReferentialAction = ReferentialActions.SetNull)]
         public int? StudentId { get; set; }
         public Student Student { get; set; }
     }

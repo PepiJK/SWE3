@@ -11,19 +11,39 @@ namespace SWE3.TestApp
         {
             var context = new TestAppContext("Server=localhost;Port=5432;Database=sepp;User Id=sepp;Password=123456;");
 
-            // Cache test
+            // Get test
             var persons = context.Persons.Get();
             var persons2 = context.Persons.Get();
             var persons3 = persons.Get();
 
             // Save test
-            var newPerson = new Person {
+            var newPersonDb = context.Persons.Create(new Person {
                 FirstName = "Josef",
                 LastName = "Koch",
                 BirthDate = DateTime.Now
-            };
-            
-            var newPersondb = context.Persons.Add(newPerson);
+            });
+
+            var newUniDb = context.Universities.Create(new University {
+                Name = "FH",
+                Address = "Wien"
+            });
+
+            var newStudentDb = context.Students.Create(new Student {
+                CurrentSemester = 5,
+                PersonId = newPersonDb.Id,
+                UniversityId = newUniDb.Id
+            });
+
+            // Update test
+            newPersonDb.FirstName = "Joe";
+            newPersonDb.LastName = "Cook";
+            newPersonDb.StudentId = newStudentDb.Id;
+            var updatedPersonDb = context.Persons.Update(newPersonDb);
+
+            // Delete test
+            context.Persons.Delete(updatedPersonDb);
+            context.Universities.Delete(newUniDb);
+            context.Students.Delete(newStudentDb);
         }
     }
 }

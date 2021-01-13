@@ -3,6 +3,9 @@ using System.Text;
 using Npgsql;
 using Serilog;
 using SWE3.SeppMapper.Models;
+using System.Collections.Generic;
+using SqlKata.Execution;
+using SqlKata.Compilers;
 
 namespace SWE3.SeppMapper.Statements
 {
@@ -18,13 +21,29 @@ namespace SWE3.SeppMapper.Statements
         {
             _connection = connection;
         }
+
+        /// <summary>Remove an entity based on provided primary key(s).</summary>
+        public void RemoveEntity(string talbeName, IDictionary<string, object> primaryKeys)
+        {
+            using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
+            {
+                var query = queryBuilder.Query(talbeName);
+
+                foreach(var pk in primaryKeys)
+                {
+                    query.Where(pk.Key, pk.Value);
+                }
+
+                query.Delete();
+            }
+        }
         
         /// <summary>Drop an existing table and all its referential integrity constraints.</summary>
         /// <param name="table"></param>
         public void DropTable(Table table)
         {
             var stmt = new StringBuilder($"DROP TABLE {table.Name} CASCADE");
-            Log.Information($"DropStatements :: {stmt}");
+            Log.Information($"DropDeleteStatements :: {stmt}");
 
             using (var pg = new NpgsqlConnection(_connection))
             {
@@ -35,7 +54,7 @@ namespace SWE3.SeppMapper.Statements
                 command.ExecuteNonQuery();
             }
 
-            Log.Debug($"DropStatements :: Dropped table {table.Name}");
+            Log.Debug($"DropDeleteStatements :: Dropped table {table.Name}");
         }
     }
 }

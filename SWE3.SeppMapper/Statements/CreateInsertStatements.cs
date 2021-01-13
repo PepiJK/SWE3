@@ -51,7 +51,7 @@ namespace SWE3.SeppMapper.Statements
             }
             stmt.Length -= 2;
             
-            Log.Information($"CreateStatements :: {stmt}");
+            Log.Information($"CreateInsertStatements :: {stmt}");
             using (var pg = new NpgsqlConnection(_connection))
             {
                 pg.Open();
@@ -75,7 +75,7 @@ namespace SWE3.SeppMapper.Statements
                         }
                     }
                 }
-                Log.Debug($"CreateStatements :: Inserted new row in table {tableName}");
+                Log.Debug($"CreateInsertStatements :: Inserted new row in table {tableName}");
 
             }
 
@@ -87,7 +87,7 @@ namespace SWE3.SeppMapper.Statements
         public void CreateTable(Entity entity)
         {
             var stmt = BuildCreateStatement(entity);
-            Log.Information($"CreateStatements :: {stmt}");
+            Log.Information($"CreateInsertStatements :: {stmt}");
 
             using (var pg = new NpgsqlConnection(_connection))
             {
@@ -98,7 +98,7 @@ namespace SWE3.SeppMapper.Statements
                 command.ExecuteNonQuery();
             }
 
-            Log.Debug($"CreateStatements :: Created table {entity.Type.Name.ToLower()}");
+            Log.Debug($"CreateInsertStatements :: Created table {entity.Type.Name.ToLower()}");
         }
 
         /// <summary>Build the Postgres create table statement.</summary>

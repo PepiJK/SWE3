@@ -56,7 +56,7 @@ namespace SWE3.SeppMapper.Statements
 
         /// <summary>Check if a table with this name exists.</summary>
         /// <param name="tableName"></param>
-        /// <returns></returns>
+        /// <returns>Boolean if table exists.</returns>
         public bool TableExists(string tableName)
         {
             using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))

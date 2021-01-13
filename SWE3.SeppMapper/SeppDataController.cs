@@ -14,13 +14,13 @@ namespace SWE3.SeppMapper
     public class SeppDataController
     {
         /// <summary>Create table and insert statements.</summary>
-        private readonly CreateInsertStatements _createStatements;
+        private readonly CreateInsertStatements _createInsertStatements;
         
         /// <summary>Drop table nad delete statements.</summary>
-        private readonly DropDeleteStatements _dropStatements;
+        private readonly DropDeleteStatements _dropDeleteStatements;
         
         /// <summary>Alter table and update statements.</summary>
-        private readonly AlterUpdateStatements _alterStatements;
+        private readonly AlterUpdateStatements _alterUpdateStatements;
         
         /// <summary>Select statements.</summary>
         private readonly SelectStatements _selectStatements;
@@ -30,9 +30,9 @@ namespace SWE3.SeppMapper
         /// <param name="connection"></param>
         public SeppDataController(IEnumerable<Entity> entities, string connection)
         {
-            _createStatements = new CreateInsertStatements(connection);
-            _dropStatements = new DropDeleteStatements(connection);
-            _alterStatements = new AlterUpdateStatements(connection);
+            _createInsertStatements = new CreateInsertStatements(connection);
+            _dropDeleteStatements = new DropDeleteStatements(connection);
+            _alterUpdateStatements = new AlterUpdateStatements(connection);
             _selectStatements = new SelectStatements(connection);
 
             UpdateDatabase(entities);
@@ -62,8 +62,45 @@ namespace SWE3.SeppMapper
                 dataDict.Add(prop.Name.ToLower(), propValue);
             }
 
-            var newPks = _createStatements.InsertRow(dbEntity.Type.Name.ToLower(), dataDict, pks);
+            var newPks = _createInsertStatements.InsertRow(dbEntity.Type.Name.ToLower(), dataDict, pks);
             return _selectStatements.GetEntity<TEntity>(newPks);
+        }
+
+        /// <summary>Updates provided entityToUpdate in the db according to the provided dbEntity.</summary>
+        /// <returns>The updated entity.</returns>
+        public TEntity UpdateEntity<TEntity>(TEntity entityToUpdate, Entity dbEntity) where TEntity: class
+        {
+            var dataDict = new Dictionary<string, object>();
+            var pksDict = new Dictionary<string, object>();
+            
+            foreach(var prop in dbEntity.Properties)
+            {
+                var propValue = entityToUpdate.GetType().GetProperty(prop.Name).GetValue(entityToUpdate, null);
+
+                if (propValue == null) continue;
+                if (prop.IsPrimaryKey && prop.Type == typeof(int) && (int) propValue == 0) continue;
+
+                if (prop.IsPrimaryKey) pksDict.Add(prop.Name.ToLower(), propValue);
+                if (!prop.IsPrimaryKey) dataDict.Add(prop.Name.ToLower(), propValue);
+            }
+
+            _alterUpdateStatements.UpdateRow(dbEntity.Type.Name.ToLower(), dataDict, pksDict);
+
+            return _selectStatements.GetEntity<TEntity>(pksDict);
+        }
+
+        /// <summary>Removes provided entityToRemove from the db according to the provided dbEntity.</summary>
+        public void RemoveEntity<TEntity>(TEntity entityToUpdate, Entity dbEntity) where TEntity: class
+        {
+            var pksDict = new Dictionary<string, object>();
+
+            foreach(var prop in dbEntity.Properties)
+            {
+                var propValue = entityToUpdate.GetType().GetProperty(prop.Name).GetValue(entityToUpdate, null);
+                if (prop.IsPrimaryKey) pksDict.Add(prop.Name.ToLower(), propValue);
+            }
+
+            _dropDeleteStatements.RemoveEntity(dbEntity.Type.Name.ToLower(), pksDict);
         }
 
         /// <summary>Update database based on the provided entities.</summary>
@@ -85,26 +122,26 @@ namespace SWE3.SeppMapper
                 else
                 {
                     Log.Debug($"SeppDataController :: Entity {entity.Type.Name} does not exist as table, creating table...");
-                    _createStatements.CreateTable(entity);
+                    _createInsertStatements.CreateTable(entity);
                 }
             }
 
             foreach (var table in remainingTables)
             {
                 Log.Debug($"SeppDataController :: Dropping redundant table {table.Name}...");
-                _dropStatements.DropTable(table);
+                _dropDeleteStatements.DropTable(table);
             }
 
             foreach(var entityTable in tablesToUpdate)
             {
                 Log.Debug($"SeppDataController :: Table {entityTable.Value.Name} exists, removing foreign key constraints...");
-                _alterStatements.DropForeignKeyConstraintsOfTable(entityTable.Value);
+                _alterUpdateStatements.DropForeignKeyConstraintsOfTable(entityTable.Value);
             }
 
             foreach(var entityTable in tablesToUpdate)
             {
                 Log.Debug($"SeppDataController :: Table {entityTable.Value.Name} exists, removing primary key constraint...");
-                _alterStatements.DropPrimaryKeyConstraintOfTable(entityTable.Value);
+                _alterUpdateStatements.DropPrimaryKeyConstraintOfTable(entityTable.Value);
             }
 
             foreach(var entityTable in tablesToUpdate)
@@ -116,13 +153,13 @@ namespace SWE3.SeppMapper
             foreach (var entity in entities)
             {
                 Log.Debug($"SeppDataController :: Adding primary key constraint from entity {entity.Type.Name} to corresponding table");
-                _alterStatements.AddPrimaryKeyConstraint(entity);
+                _alterUpdateStatements.AddPrimaryKeyConstraint(entity);
             }
 
             foreach (var entity in entities)
             {
                 Log.Debug($"SeppDataController :: Adding foreign key constraints from entity {entity.Type.Name} to corresponding table");
-                _alterStatements.AddForeignKeyConstraints(entity);
+                _alterUpdateStatements.AddForeignKeyConstraints(entity);
             }
         }
 
@@ -152,7 +189,7 @@ namespace SWE3.SeppMapper
                 else
                 {
                     // Table column is not represented in the entity
-                    _alterStatements.DropColumnFromTable(table, col);
+                    _alterUpdateStatements.DropColumnFromTable(table, col);
                     Log.Debug($"SeppDataController :: Dropped column {col.Name} from table {table.Name}");
                     tableHasUpdated = true;
                 }
@@ -168,7 +205,7 @@ namespace SWE3.SeppMapper
                     throw new NewColumnException($"New column {prop.Name} cannot be added because it is not nullable and table {table.Name} holds data");
                 }
 
-                _alterStatements.AddPropertyToTable(table, prop);
+                _alterUpdateStatements.AddPropertyToTable(table, prop);
                 Log.Debug($"SeppDataController :: Added new property {prop.Name} to existing table {table.Name}");
                 tableHasUpdated = true;
             }

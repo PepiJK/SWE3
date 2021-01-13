@@ -6,6 +6,8 @@ using SWE3.SeppMapper.Attributes;
 using SWE3.SeppMapper.Models;
 using System.Linq;
 using SWE3.SeppMapper.Exceptions;
+using SWE3.SeppMapper.Helpers;
+using System.Linq.Expressions;
 
 namespace SWE3.SeppMapper
 {
@@ -18,6 +20,8 @@ namespace SWE3.SeppMapper
         /// <summary>SeppDataController responsible for controlling db access.</summary>
         private static SeppDataController SeppDataController { get; set; }
 
+        private static SeppContext SeppContext { get; set; }
+
         /// <summary>Gather metadata from SeppContext, check for correctness and update database.</summary>
         /// <param name="context"></param>
         /// <param name="connection"></param>
@@ -28,6 +32,8 @@ namespace SWE3.SeppMapper
                 .WriteTo.Console()
                 .WriteTo.File("Logs/log.txt")
                 .CreateLogger();
+
+            SeppContext = context;
 
             Log.Debug($"SeppContextController :: Gathering information on all provided entities from {context.GetType().Name}...");
             var types = GetSeppSetTypes(context);
@@ -65,6 +71,62 @@ namespace SWE3.SeppMapper
         {
             return SeppDataController.SaveEntity<TEntity>(entity, Entities.Single(e => e.Type == typeof(TEntity)));
         } 
+
+        /// <summary>Updates provided entity in the db.</summary>
+        /// <returns>The updated entity.</returns>
+        public static TEntity UpdateEntity<TEntity>(TEntity entity) where TEntity: class
+        {
+            return SeppDataController.UpdateEntity<TEntity>(entity, Entities.Single(e => e.Type == typeof(TEntity)));
+        } 
+
+        /// <summary>Removes provided entity in the db.</summary>
+        public static void RemoveEntity<TEntity>(TEntity entity) where TEntity: class
+        {
+            var dbEntity = Entities.Single(e => e.Type == typeof(TEntity));
+            SeppDataController.RemoveEntity<TEntity>(entity, dbEntity);
+
+            RemoveRelatedEntities(dbEntity, entity);
+        }
+
+        /// <summary>Looks up foreign key references and their ReferencingType to remove the underlying related entity from the SeppContext</summary>
+        private static void RemoveRelatedEntities(Entity dbEntity, object entity)
+        {
+            var referencedEntityTypes = dbEntity.Properties.Where(p => p.ForeignKeyInfo != null).Select(p => p.ForeignKeyInfo.ReferencingType);
+            var referencedEntities = Entities.Where(e => referencedEntityTypes.Contains(e.Type));
+
+            foreach (var refEntity in referencedEntities)
+            {
+                if (refEntity.Properties.Where(p => p.ForeignKeyInfo?.ReferencingType == dbEntity.Type && p.ForeignKeyInfo?.ReferentialAction == ReferentialActions.Cascade).Count() > 0)
+                {
+                    var foreignKeys = dbEntity.Properties.Where(p => p.ForeignKeyInfo?.ReferencingType == refEntity.Type);
+                    foreach(var foreignKey in foreignKeys)
+                    {
+                        var propertyName = foreignKey.ForeignKeyInfo.ReferencingColumn;
+                        var propertyValue = entity.GetType().GetProperty(foreignKey.Name).GetValue(entity, null);
+                        var entityType = refEntity.Type;
+
+                        if (propertyValue == null) continue;
+
+                        var seppSet = SeppContext.GetType().GetProperties().Single(p => p.PropertyType == typeof(SeppSet<>).MakeGenericType(entityType)).GetValue(SeppContext, null);
+                        var seppSetRemoveAll = seppSet.GetType().GetMethods().Single(m => m.Name == "RemoveAll");
+
+                        // Lambda p => p.propertyName == propertyValue
+                        Type itemType = entityType;
+                        ParameterExpression predParam = Expression.Parameter(itemType, "p");
+                        Expression left = Expression.Property(predParam, itemType.GetProperty(propertyName));
+                        Expression right = Expression.Constant(propertyValue);
+                        Expression equality = Expression.Equal(left, right);
+                        Type predicateType = typeof(Predicate<>).MakeGenericType(itemType);
+                        LambdaExpression lambda = Expression.Lambda(predicateType, equality, predParam);
+                        var compiled = lambda.Compile();
+
+                        seppSetRemoveAll.Invoke(seppSet, new object[]{compiled});
+                    }
+                }
+            }
+        }
+
+
 
         /// <summary>Gather list of types of the all SeppSet properties in SeppContext.</summary>
         /// <param name="context"></param>
