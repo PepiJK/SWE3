@@ -26,12 +26,23 @@ namespace SWE3.SeppMapper.Statements
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
         /// <returns>Queried entities.</returns>
-        public IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity : class
+        public IEnumerable<TEntity> GetEntities<TEntity>() where TEntity : class
         {
             using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
             {
                 Log.Debug($"SelectStatements :: Select all rows from table {typeof(TEntity).Name.ToLower()}");
                 return queryBuilder.Query(typeof(TEntity).Name.ToLower()).Select("*").Get<TEntity>();
+            }
+        }
+
+        /// <summary>Gets all rows of the provided TEntity type with a simple where expression from the db.</summary>
+        /// <returns>Queried entities.</returns>
+        public IEnumerable<TEntity> GetEntities<TEntity>(string column, string whereOperator, object columnValue) where TEntity : class
+        {
+            using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
+            {
+                Log.Debug($"SelectStatements :: Select all rows from table {typeof(TEntity).Name.ToLower()} where {column} {whereOperator} {columnValue.ToString()}");
+                return queryBuilder.Query(typeof(TEntity).Name.ToLower()).Select("*").Where(column, whereOperator, columnValue).Get<TEntity>();
             }
         }
 

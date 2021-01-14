@@ -20,6 +20,7 @@ namespace SWE3.SeppMapper
         /// <summary>SeppDataController responsible for controlling db access.</summary>
         private static SeppDataController SeppDataController { get; set; }
 
+        /// <summary>SeppContext which contains the entities.</summary>
         private static SeppContext SeppContext { get; set; }
 
         /// <summary>Gather metadata from SeppContext, check for correctness and update database.</summary>
@@ -60,9 +61,16 @@ namespace SWE3.SeppMapper
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
         /// <returns>Queried entities.</returns>
-        public static IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity: class
+        public static IEnumerable<TEntity> GetEntities<TEntity>() where TEntity: class
         {
-            return SeppDataController.GetAllRowsFromDb<TEntity>();
+            return SeppDataController.GetEntities<TEntity>();
+        }
+
+        /// <summary>Gets all rows of the provided TEntity type from the db where the expression fits</summary>
+        /// <returns>Queried entities.</returns>
+        public static IEnumerable<TEntity> GetEntities<TEntity>(BinaryExpression binaryExpression) where TEntity: class
+        {
+            return SeppDataController.GetEntities<TEntity>(binaryExpression);
         }
 
         /// <summary>Saves provided entity in the db.</summary>
@@ -79,7 +87,7 @@ namespace SWE3.SeppMapper
             return SeppDataController.UpdateEntity<TEntity>(entity, Entities.Single(e => e.Type == typeof(TEntity)));
         } 
 
-        /// <summary>Removes provided entity in the db.</summary>
+        /// <summary>Removes provided entity from the db and remove the related entities which should cascade.</summary>
         public static void RemoveEntity<TEntity>(TEntity entity) where TEntity: class
         {
             var dbEntity = Entities.Single(e => e.Type == typeof(TEntity));
@@ -88,9 +96,13 @@ namespace SWE3.SeppMapper
             RemoveRelatedEntities(dbEntity, entity);
         }
 
-        /// <summary>Looks up foreign key references and their ReferencingType to remove the underlying related entity from the SeppContext</summary>
+        /// <summary>Looks up foreign key references and their ReferencingType to remove the underlying related entity from the SeppContext.</summary>
         private static void RemoveRelatedEntities(Entity dbEntity, object entity)
         {
+            // TODO: should be called recursevly if the referenced entity has another referenced entity
+            // -> then also the data (primary key value) of this referenced entity is needed
+            // should also update the referenced entity if the ReferentialAction is SetNull
+
             var referencedEntityTypes = dbEntity.Properties.Where(p => p.ForeignKeyInfo != null).Select(p => p.ForeignKeyInfo.ReferencingType);
             var referencedEntities = Entities.Where(e => referencedEntityTypes.Contains(e.Type));
 
@@ -125,8 +137,6 @@ namespace SWE3.SeppMapper
                 }
             }
         }
-
-
 
         /// <summary>Gather list of types of the all SeppSet properties in SeppContext.</summary>
         /// <param name="context"></param>

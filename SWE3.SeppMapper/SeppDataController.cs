@@ -7,6 +7,7 @@ using SqlKata.Execution;
 using SWE3.SeppMapper.Statements;
 using SWE3.SeppMapper.Helpers;
 using SWE3.SeppMapper.Exceptions;
+using System.Linq.Expressions;
 
 namespace SWE3.SeppMapper
 {
@@ -40,9 +41,22 @@ namespace SWE3.SeppMapper
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
         /// <returns>Queried entities.</returns>
-        public IEnumerable<TEntity> GetAllRowsFromDb<TEntity>() where TEntity : class
+        public IEnumerable<TEntity> GetEntities<TEntity>() where TEntity : class
         {
-            return _selectStatements.GetAllRowsFromDb<TEntity>();
+            return _selectStatements.GetEntities<TEntity>();
+        }
+
+        /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <returns>Queried entities.</returns>
+        public IEnumerable<TEntity> GetEntities<TEntity>(BinaryExpression binaryExpression) where TEntity : class
+        {
+            if (!(binaryExpression.Left is MemberExpression memExpr)) throw new Exception($"Left of expression {binaryExpression.ToString()} is not a MemberExpression");
+
+            var column = memExpr.Member.Name.ToLower();
+            var op = GetOperator(binaryExpression);
+            var value = GetValueFromExpression(binaryExpression.Right);
+            
+            return _selectStatements.GetEntities<TEntity>(column, op, value);
         }
 
         /// <summary>Saves provided entityToSave in the db according to the provided dbEntity.</summary>
@@ -102,6 +116,45 @@ namespace SWE3.SeppMapper
 
             _dropDeleteStatements.RemoveEntity(dbEntity.Type.Name.ToLower(), pksDict);
         }
+
+        /// <summary>Get the operator from a simple binary expression.</summary>
+        /// <param name="binaryExpression"></param>
+        private string GetOperator(BinaryExpression binaryExpression)
+        {
+            switch (binaryExpression.NodeType)
+            {
+                case ExpressionType.Equal:
+                    return "=";
+                case ExpressionType.NotEqual:
+                    return "!=";
+                case ExpressionType.GreaterThan:
+                    return ">";
+                case ExpressionType.GreaterThanOrEqual:
+                    return ">=";
+                case ExpressionType.LessThan:
+                    return "<";
+                case ExpressionType.LessThanOrEqual:
+                    return "<=";
+            }
+            
+            throw new Exception($"Operator of {binaryExpression.ToString()} is not supported");
+        }
+
+        
+        private object GetValueFromExpression(Expression expression)
+        {
+            if (expression is ConstantExpression constantExpression) return constantExpression.Value;
+            if (expression is MemberExpression memberExpression)
+            {
+                var objectMember = Expression.Convert(memberExpression, typeof(object));
+                var getterLambda = Expression.Lambda<Func<object>>(objectMember);
+                var getter = getterLambda.Compile();
+
+                return getter();
+            }
+            else throw new Exception($"Expression {expression.ToString()} is not ConstantExpression or MemberExpression");
+        }
+
 
         /// <summary>Update database based on the provided entities.</summary>
         /// <param name="entities"></param>

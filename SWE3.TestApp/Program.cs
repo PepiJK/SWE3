@@ -13,8 +13,6 @@ namespace SWE3.TestApp
 
             // Get test
             var persons = context.Persons.Get();
-            var persons2 = context.Persons.Get();
-            var persons3 = persons.Get();
 
             // Save test
             var newPersonDb = context.Persons.Create(new Person {
@@ -40,6 +38,11 @@ namespace SWE3.TestApp
             newPersonDb.StudentId = newStudentDb.Id;
             var updatedPersonDb = context.Persons.Update(newPersonDb);
 
+            // Where test
+            var where1 = context.Persons.Get(p => p.Id == updatedPersonDb.Id);
+            var where2 = context.Persons.Get(p => p.BirthDate < DateTime.Now);
+            var where3 = context.Persons.Get(p => p.FirstName != "Josef");
+            
             // Delete test
             context.Persons.Delete(updatedPersonDb);
             context.Universities.Delete(newUniDb);
