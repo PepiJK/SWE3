@@ -25,7 +25,11 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Updates a row based on given primary keys.</summary>
-        public void UpdateRow(string tableName, IDictionary<string, object> data,  IDictionary<string, object> primaryKeys)
+        /// <param name="tableName"></param>
+        /// <param name="data"></param>
+        /// <param name="primaryKeys"></param>
+        public void UpdateRow(string tableName, IDictionary<string, object> data, 
+            IDictionary<string, object> primaryKeys)
         {
             var stmt = new StringBuilder($"UPDATE {tableName} SET ");
             foreach (var element in data)
@@ -59,7 +63,7 @@ namespace SWE3.SeppMapper.Statements
 
                 command.ExecuteNonQuery();
             }
-            Log.Debug($"AlterUpdateStatements :: Updated row in table {tableName}");
+            Log.Debug($"AlterUpdateStatements :: Updated a row in table {tableName}");
         }
 
         /// <summary>Drop all foreign key constraints of the provided table.</summary>
@@ -87,7 +91,9 @@ namespace SWE3.SeppMapper.Statements
             Log.Debug($"AlterUpdateStatements :: Dropped all foreign key constraints of table {table.Name}");
         }
 
-        /// <summary>Drop primary key constraint of provided table. This only works if no foreign key constraint references the primary key.</summary>
+        /// <summary>
+        /// Drop primary key constraint of provided table.
+        /// This only works if no foreign key constraint references the primary key.</summary>
         /// <param name="table"></param>
         public void DropPrimaryKeyConstraintOfTable(Table table)
         {
@@ -151,7 +157,7 @@ namespace SWE3.SeppMapper.Statements
             Log.Debug($"AlterUpdateStatements :: Added property {prop.Name.ToLower()} to {table.Name}");
         }
 
-        /// <summary>Add primary key constraint of en entity to an exisiting table.</summary>
+        /// <summary>Add primary key constraint of en entity to an existing table.</summary>
         /// <param name="entity"></param>
         public void AddPrimaryKeyConstraint(Entity entity)
         {
@@ -202,10 +208,6 @@ namespace SWE3.SeppMapper.Statements
                     {
                         case ReferentialActions.Cascade:
                             stmt.Append(" ON DELETE CASCADE");
-                            break;
-
-                        case ReferentialActions.NoAction:
-                            stmt.Append(" ON DELETE NO ACTION");
                             break;
 
                         case ReferentialActions.SetNull:

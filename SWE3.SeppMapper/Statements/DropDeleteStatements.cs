@@ -23,11 +23,13 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Remove an entity based on provided primary key(s).</summary>
-        public void RemoveEntity(string talbeName, IDictionary<string, object> primaryKeys)
+        /// <param name="tableName"></param>
+        /// <param name="primaryKeys"></param>
+        public void RemoveEntity(string tableName, IDictionary<string, object> primaryKeys)
         {
             using (var queryBuilder = new QueryFactory(new NpgsqlConnection(_connection), new PostgresCompiler()))
             {
-                var query = queryBuilder.Query(talbeName);
+                var query = queryBuilder.Query(tableName);
 
                 foreach(var pk in primaryKeys)
                 {
@@ -35,6 +37,7 @@ namespace SWE3.SeppMapper.Statements
                 }
 
                 query.Delete();
+                Log.Debug($"DropDeleteStatements :: Dropped row in table table {tableName}");
             }
         }
         

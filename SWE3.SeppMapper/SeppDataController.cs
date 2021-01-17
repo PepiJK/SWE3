@@ -40,6 +40,7 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>Queried entities.</returns>
         public IEnumerable<TEntity> GetEntities<TEntity>() where TEntity : class
         {
@@ -47,10 +48,13 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <param name="binaryExpression"></param>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>Queried entities.</returns>
+        /// <exception cref="ExpressionNotSupportedException"></exception>
         public IEnumerable<TEntity> GetEntities<TEntity>(BinaryExpression binaryExpression) where TEntity : class
         {
-            if (!(binaryExpression.Left is MemberExpression memExpr)) throw new Exception($"Left of expression {binaryExpression.ToString()} is not a MemberExpression");
+            if (!(binaryExpression.Left is MemberExpression memExpr)) throw new ExpressionNotSupportedException($"Left of expression {binaryExpression.ToString()} is not a MemberExpression");
 
             var column = memExpr.Member.Name.ToLower();
             var op = GetOperator(binaryExpression);
@@ -60,6 +64,9 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Saves provided entityToSave in the db according to the provided dbEntity.</summary>
+        /// <param name="entityToSave"></param>
+        /// <param name="dbEntity"></param>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>The newly saved entity.</returns>
         public TEntity SaveEntity<TEntity>(TEntity entityToSave, Entity dbEntity) where TEntity: class
         {
@@ -81,6 +88,9 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Updates provided entityToUpdate in the db according to the provided dbEntity.</summary>
+        /// <param name="entityToUpdate"></param>
+        /// <param name="dbEntity"></param>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>The updated entity.</returns>
         public TEntity UpdateEntity<TEntity>(TEntity entityToUpdate, Entity dbEntity) where TEntity: class
         {
@@ -104,6 +114,9 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Removes provided entityToRemove from the db according to the provided dbEntity.</summary>
+        /// <param name="entityToUpdate"></param>
+        /// <param name="dbEntity"></param>
+        /// <typeparam name="TEntity"></typeparam>
         public void RemoveEntity<TEntity>(TEntity entityToUpdate, Entity dbEntity) where TEntity: class
         {
             var pksDict = new Dictionary<string, object>();
@@ -119,6 +132,8 @@ namespace SWE3.SeppMapper
 
         /// <summary>Get the operator from a simple binary expression.</summary>
         /// <param name="binaryExpression"></param>
+        /// <exception cref="ExpressionNodeTypeNotSupportedException"></exception>
+        /// /// <returns>Operator in SQL format.</returns>
         private string GetOperator(BinaryExpression binaryExpression)
         {
             switch (binaryExpression.NodeType)
@@ -137,10 +152,13 @@ namespace SWE3.SeppMapper
                     return "<=";
             }
             
-            throw new Exception($"Operator of {binaryExpression.ToString()} is not supported");
+            throw new ExpressionNodeTypeNotSupportedException($"Operator of {binaryExpression.ToString()} is not supported");
         }
 
-        
+        /// <summary>Get the value from an ConstantExpression or MemberExpression.</summary>
+        /// <param name="expression"></param>
+        /// <returns>Value of the expression</returns>
+        /// <exception cref="ExpressionNotSupportedException"></exception>
         private object GetValueFromExpression(Expression expression)
         {
             if (expression is ConstantExpression constantExpression) return constantExpression.Value;
@@ -152,7 +170,8 @@ namespace SWE3.SeppMapper
 
                 return getter();
             }
-            else throw new Exception($"Expression {expression.ToString()} is not ConstantExpression or MemberExpression");
+            
+            throw new ExpressionNotSupportedException($"Expression {expression.ToString()} is not ConstantExpression or MemberExpression");
         }
 
 

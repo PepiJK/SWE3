@@ -1,1 +1,17 @@
 # SWE3 ORMapper "SeppMapper" by Josef Koch
+## Requirements
+1. Dotnet Core 3.1 Runtime
+2. PostgreSQL database with user
+
+## Docker
+It is highly recommended to use the docker-compose.yaml file to create the required PostgreSQL database for the TestApp as well as for the unit tests.
+
+## Setup
+If you choose to use the provided docker-compose.yaml you don't have to setup anything further. If you choose to run your own database, you have to specify your own Connection String in the constructor of the Context.
+
+## Not Implemented Features
+* Changetracking
+* Locking
+* Caching
+* Querying, Creating, Updating of related Entities
+* Transactions

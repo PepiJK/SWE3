@@ -25,6 +25,7 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Gets all rows of the provided TEntity type from the db.</summary>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>Queried entities.</returns>
         public IEnumerable<TEntity> GetEntities<TEntity>() where TEntity : class
         {
@@ -36,6 +37,10 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Gets all rows of the provided TEntity type with a simple where expression from the db.</summary>
+        /// <param name="column"></param>
+        /// <param name="whereOperator"></param>
+        /// <param name="columnValue"></param>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>Queried entities.</returns>
         public IEnumerable<TEntity> GetEntities<TEntity>(string column, string whereOperator, object columnValue) where TEntity : class
         {
@@ -47,6 +52,8 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Gets the first row of the provided TEntity type where the provided primary key(s) match</summary>
+        /// <param name="primaryKeys"></param>
+        /// <typeparam name="TEntity"></typeparam>
         /// <returns>Entity with matching primary key(s)</returns>
         public TEntity GetEntity<TEntity>(IDictionary<string, object> primaryKeys) where TEntity : class
         {

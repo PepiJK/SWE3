@@ -4,6 +4,8 @@
 # my ignores
 Logs/
 Data/
+html/
+latex/
 
 # User-specific files
 *.suo

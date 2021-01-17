@@ -85,6 +85,26 @@ namespace SWE3.Tests
         }
 
         [Test]
+        public void Should_save_and_get_entity_with_expression()
+        {
+            var context = new TestAppContext(connection);
+            var newPerson = new Person {
+                FirstName = "Josef",
+                LastName = "Koch",
+                BirthDate = DateTime.Now
+            };
+            
+            var dbPerson = context.Persons.Create(newPerson);
+            var dbPersonFromList = context.Persons.Get(p => p.Id == dbPerson.Id).FirstOrDefault();
+
+            Assert.AreEqual(newPerson.FullName, dbPerson.FullName);
+            Assert.NotNull(dbPerson.Id);
+            Assert.NotZero(dbPerson.Id);
+            Assert.AreEqual(dbPerson.Id, dbPersonFromList.Id);
+            Assert.AreEqual(dbPerson.FullName, dbPersonFromList.FullName);
+        }
+
+        [Test]
         public void Should_save_and_update_and_get_simple_entity()
         {
             var context = new TestAppContext(connection);

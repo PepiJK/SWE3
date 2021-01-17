@@ -3,18 +3,19 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq.Expressions;
+using SWE3.SeppMapper.Exceptions;
 
 namespace SWE3.SeppMapper
 {
-    /// <summary>The entity as a List with orm features.</summary>
+    /// <summary>Represents a list of entities with orm features.</summary>
     /// <typeparam name="TEntity"></typeparam>
     public class SeppSet<TEntity>: List<TEntity> where TEntity: class
     {
-        /// <summary>Base List contructor.</summary>
+        /// <summary>Base List constructor.</summary>
         public SeppSet() : base() {}
 
-        /// <summary>Base List contructor with provided collection.</summary>
-        public SeppSet(IEnumerable<TEntity> collection) : base(collection) {}
+        /// <summary>Base List constructor with provided collection.</summary>
+        private SeppSet(IEnumerable<TEntity> collection) : base(collection) {}
 
         /// <summary>Gets all rows of this entity from the db and sets this SeppSet.</summary>
         /// <returns>This SeppSet</returns>
@@ -29,10 +30,13 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Gets certain rows of this entity from the db which match the expression.</summary>
+        /// <param name="expression"></param>
         /// <returns>SeppSet of this entity.</returns>
+        /// <exception cref="ExpressionNotSupportedException"></exception>
         public SeppSet<TEntity> Get(Expression<Func<TEntity, bool>> expression)
         {
-            if (!(expression.Body is BinaryExpression binExpression)) throw new Exception($"Expression {expression.Body.ToString()} is not a BinaryExpression");
+            if (!(expression.Body is BinaryExpression binExpression))
+                throw new ExpressionNotSupportedException($"Expression {expression.Body} is not a BinaryExpression");
 
             var data = SeppContextController.GetEntities<TEntity>(binExpression);
 
@@ -47,8 +51,9 @@ namespace SWE3.SeppMapper
             return new SeppSet<TEntity>(data);
         }
 
-        /// <summary>Adds a new entity and persits its data in the db.</summary>
-        /// <returns>The newly persited entity.</returns>
+        /// <summary>Adds a new entity and persists its data in the db.</summary>
+        /// <param name="entity"></param>
+        /// <returns>The newly persisted entity.</returns>
         public TEntity Create(TEntity entity)
         {
             var newEntity = SeppContextController.SaveEntity<TEntity>(entity);
@@ -59,6 +64,7 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Removes a given entity based on its primary key.</summary>
+        /// <param name="entity"></param>
         public void Delete(TEntity entity)
         {
             SeppContextController.RemoveEntity<TEntity>(entity);
@@ -66,6 +72,7 @@ namespace SWE3.SeppMapper
         }
 
         /// <summary>Updates a given entity based on its primary key.</summary>
+        /// <param name="entity"></param>
         /// <returns>The updated entity</returns>
         public TEntity Update(TEntity entity)
         {

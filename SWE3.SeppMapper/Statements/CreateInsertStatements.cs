@@ -25,6 +25,9 @@ namespace SWE3.SeppMapper.Statements
         }
 
         /// <summary>Inserts a new row.</summary>
+        /// <param name="tableName"></param>
+        /// <param name="data"></param>
+        /// <param name="primaryKeys"></param>
         /// <returns>Dictionary (column name, value) of the new primary keys.</returns>
         public IDictionary<string, object> InsertRow(string tableName, IDictionary<string, object> data, IEnumerable<string> primaryKeys)
         {
@@ -75,8 +78,7 @@ namespace SWE3.SeppMapper.Statements
                         }
                     }
                 }
-                Log.Debug($"CreateInsertStatements :: Inserted new row in table {tableName}");
-
+                Log.Debug($"CreateInsertStatements :: Inserted a new row in table {tableName}");
             }
 
             return newPks;
