@@ -54,9 +54,17 @@ namespace SWE3.SeppMapper
         /// <exception cref="ExpressionNotSupportedException"></exception>
         public IEnumerable<TEntity> GetEntities<TEntity>(BinaryExpression binaryExpression) where TEntity : class
         {
-            if (!(binaryExpression.Left is MemberExpression memExpr)) throw new ExpressionNotSupportedException($"Left of expression {binaryExpression.ToString()} is not a MemberExpression");
+            string column = null;
+            if (binaryExpression.Left is MemberExpression leftMem)
+            {
+                column = leftMem.Member.Name.ToLower();
+            }
+            else if (binaryExpression.Left is UnaryExpression leftUnary)
+            {
+                column = ((MemberExpression) leftUnary.Operand).Member.Name.ToLower();
+            }
+            else throw new ExpressionNotSupportedException($"Left {binaryExpression.Left.ToString()} cannot extract member name");
 
-            var column = memExpr.Member.Name.ToLower();
             var op = GetOperator(binaryExpression);
             var value = GetValueFromExpression(binaryExpression.Right);
             
