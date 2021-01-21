@@ -1,4 +1,4 @@
-# SWE3 ORMapper "SeppMapper" by Josef Koch
+# SWE3 ORMapper "SeppMapper"
 
 ## Setup
 It is highly recommended to use the docker-compose.yaml file to create the required PostgreSQL database for the TestApp as well as for the unit tests. If you choose to use the provided docker-compose.yaml you don't have to setup anything further. If you choose to run your own database, you have to specify your own Connection String in the constructor of the Context.
